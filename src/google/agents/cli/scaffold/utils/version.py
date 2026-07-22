@@ -19,12 +19,6 @@ import time
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-import requests
-from packaging import version as pkg_version
-from rich.console import Console
-
-console = Console()
-
 PACKAGE_NAME = "google-agents-cli"
 # The 0.0.0 sentinel used when a real version can't be determined — an
 # uninstalled/dev checkout (get_current_version) or an unreachable PyPI
@@ -76,6 +70,8 @@ def agents_cli_version_pin() -> str:
 
 def get_latest_version() -> str:
     """Get the latest version available on PyPI."""
+    import requests
+
     try:
         response = requests.get(f"https://pypi.org/pypi/{PACKAGE_NAME}/json", timeout=2)
         if response.status_code == 200:
@@ -91,6 +87,8 @@ def check_for_updates() -> tuple[bool, str, str]:
     Returns:
         Tuple of (needs_update, current_version, latest_version)
     """
+    from packaging import version as pkg_version
+
     current = get_current_version()
     latest = get_latest_version()
 
@@ -111,6 +109,9 @@ def display_update_message() -> None:
         _record_update_check()
 
         if needs_update:
+            from rich.console import Console
+
+            console = Console()
             console.print(
                 f"\n[yellow]⚠️  Update available: {current} → {latest}[/]",
                 highlight=False,

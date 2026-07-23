@@ -33,11 +33,16 @@ def redact_cmd(args: list[str]) -> str:
     """
     redacted_cmd_list = list(args)
     for i, arg in enumerate(args):
-        if arg == "--github-pat" and i + 1 < len(args):
+        if arg in ("--github-pat", "--api-key", "--api_key", "--access-token", "--access_token") and i + 1 < len(args):
             redacted_cmd_list[i + 1] = "[REDACTED]"
         elif any(
             secret in arg
-            for secret in ["GITHUB_PAT", "GH_TOKEN", "GITHUB_TOKEN", "GITHUB_APP_KEY"]
+            for secret in [
+                "GITHUB_PAT", "GH_TOKEN", "GITHUB_TOKEN", "GITHUB_APP_KEY",
+                "GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENAI_API_KEY",
+                "GCP_SERVICE_ACCOUNT_KEY", "SERVICE_ACCOUNT_KEY",
+                "WIF_POOL_ID", "WIF_PROVIDER_ID", "ACCESS_TOKEN", "API_KEY"
+            ]
         ):
             redacted_cmd_list[i] = "[REDACTED]"
 

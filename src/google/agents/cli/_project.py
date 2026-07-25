@@ -24,7 +24,6 @@ from pathlib import Path
 from typing import Any
 
 import click
-import yaml
 
 
 @dataclass
@@ -112,6 +111,8 @@ def read_project_config(project_dir: str | None = None) -> ProjectConfig:
     Returns:
         ProjectConfig with values from the manifest or defaults.
     """
+    import yaml
+
     root = Path(project_dir) if project_dir else Path.cwd()
     manifest_path = root / "agents-cli-manifest.yaml"
     pyproject_path = root / "pyproject.toml"

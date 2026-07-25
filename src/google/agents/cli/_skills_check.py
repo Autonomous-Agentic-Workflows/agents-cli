@@ -22,7 +22,6 @@ import time
 from pathlib import Path
 
 import click
-import yaml
 
 # Pin the skills npm package to avoid executing an unverified version.
 SKILLS_NPX_PACKAGE = "skills@1.4.8"
@@ -37,6 +36,8 @@ def _parse_skill_version(skill_md: Path) -> str | None:
     Returns the version string, or ``None`` on any failure.
     Warns to stderr when the file exists but cannot be parsed.
     """
+    import yaml
+
     try:
         content = skill_md.read_text(encoding="utf-8")
     except OSError:

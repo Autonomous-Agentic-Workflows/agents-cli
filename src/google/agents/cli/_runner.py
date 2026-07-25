@@ -32,7 +32,24 @@ def redact_cmd(args: list[str]) -> str:
     Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
-    sensitive_options = ("--github-pat", "--api-key", "--api_key")
+    sensitive_options = (
+        "--github-pat",
+        "--github_pat",
+        "--github-token",
+        "--github_token",
+        "--api-key",
+        "--api_key",
+        "--apikey",
+        "--access-token",
+        "--access_token",
+        "--auth-token",
+        "--auth_token",
+        "--token",
+        "--password",
+        "--secret",
+        "--client-secret",
+        "--client_secret",
+    )
     sensitive_prefixes = tuple(opt + "=" for opt in sensitive_options)
 
     sensitive_env_vars = [
@@ -42,19 +59,27 @@ def redact_cmd(args: list[str]) -> str:
         "GITHUB_APP_KEY",
         "GEMINI_API_KEY",
         "GOOGLE_API_KEY",
+        "ACCESS_TOKEN",
+        "AUTH_TOKEN",
+        "ID_TOKEN",
+        "SECRET_KEY",
+        "DB_PASSWORD",
+        "DB_PASS",
+        "PASSWORD",
     ]
 
     for i, raw_arg in enumerate(args):
         arg = str(raw_arg)
-        if arg in sensitive_options and i + 1 < len(args):
+        arg_lower = arg.lower()
+        if arg_lower in sensitive_options and i + 1 < len(args):
             redacted_cmd_list[i + 1] = "[REDACTED]"
-        elif arg.startswith(sensitive_prefixes):
+        elif arg_lower.startswith(sensitive_prefixes):
             opt_name, value = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
-        elif any(secret in arg for secret in sensitive_env_vars):
+        elif any(secret in arg.upper() for secret in sensitive_env_vars):
             if "=" in arg:
                 key, sep, val = arg.partition("=")
-                if any(secret in key for secret in sensitive_env_vars):
+                if any(secret in key.upper() for secret in sensitive_env_vars):
                     redacted_cmd_list[i] = f"{key}=[REDACTED]"
                 else:
                     redacted_cmd_list[i] = "[REDACTED]"

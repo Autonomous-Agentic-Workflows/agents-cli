@@ -24,7 +24,6 @@ from pathlib import Path
 from typing import Any
 
 import click
-import yaml
 
 
 @dataclass
@@ -117,6 +116,10 @@ def read_project_config(project_dir: str | None = None) -> ProjectConfig:
     pyproject_path = root / "pyproject.toml"
 
     if manifest_path.exists():
+        # Performance optimization: lazy-import heavy yaml package inside the
+        # function where it is actually used.
+        import yaml
+
         # Primary: read from manifest
         with open(manifest_path, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}

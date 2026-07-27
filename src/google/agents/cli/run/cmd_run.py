@@ -542,7 +542,7 @@ def _print_author_tag(author: str | None, last_author: str | None) -> str | None
     if author and author != last_author:
         if last_author is not None:
             click.echo()
-        click.echo(f"[{author}]: ", nl=False)
+        click.secho(f"[{author}]: ", fg="green", nl=False)
         return author
     return last_author
 
@@ -596,7 +596,8 @@ def _query_adk_sse(
     # Print user message (text part only for display)
     user_text = " ".join(p.get("text", "") for p in parts if "text" in p).strip()
     if user_text:
-        click.echo(f"[user]: {user_text}")
+        click.secho("[user]:", fg="yellow", nl=False)
+        click.echo(f" {user_text}")
 
     # Send message via SSE
     run_url = f"{service_url}/run_sse"
@@ -695,7 +696,8 @@ def _query_agent_runtime_sse(
         ).strip()
     )
     if user_text:
-        click.echo(f"[user]: {user_text}")
+        click.secho("[user]:", fg="yellow", nl=False)
+        click.echo(f" {user_text}")
 
     with requests.post(
         stream_url, headers=headers, json=payload, stream=True, timeout=120
@@ -778,7 +780,8 @@ async def _query_a2a_async(
         p.root.text for p in parts if isinstance(p.root, TextPart) and p.root.text
     )
     if user_text:
-        click.echo(f"[user]: {user_text}")
+        click.secho("[user]:", fg="yellow", nl=False)
+        click.echo(f" {user_text}")
 
     async with httpx.AsyncClient(headers=headers, timeout=120) as client:
         factory = ClientFactory(
@@ -847,7 +850,8 @@ def _print_a2a_part(part: Part, artifacts: list[str]) -> None:
     elif isinstance(root, FilePart):
         file_data = root.file
         if isinstance(file_data, FileWithUri):
-            click.echo(f"\n[file: {file_data.uri}]", nl=False)
+            click.echo("\n", nl=False)
+            click.secho(f"[file: {file_data.uri}]", fg="cyan", nl=False)
         elif isinstance(file_data, FileWithBytes):
             path = _save_inline_artifact(file_data.bytes, file_data.mime_type)
             if path is not None:
@@ -872,17 +876,20 @@ def _print_sse_part(part: dict, artifacts: list[str]) -> None:
     if file_data:
         uri = file_data.get("fileUri")
         if uri:
-            click.echo(f"\n[file: {uri}]", nl=False)
+            click.echo("\n", nl=False)
+            click.secho(f"[file: {uri}]", fg="cyan", nl=False)
         return
     function_call = part.get("functionCall")
     if function_call:
         name = function_call.get("name", "")
         args = function_call.get("args", {})
-        click.echo(f"\n[tool_call: {name}({json.dumps(args)})]", nl=False)
+        click.echo("\n", nl=False)
+        click.secho(f"[tool_call: {name}({json.dumps(args)})]", fg="blue", bold=True, nl=False)
         return
     function_response = part.get("functionResponse")
     if function_response:
         name = function_response.get("name", "")
         response = function_response.get("response", {})
-        click.echo(f"\n[tool_response: {name} -> {json.dumps(response)}]", nl=False)
+        click.echo("\n", nl=False)
+        click.secho(f"[tool_response: {name} -> {json.dumps(response)}]", fg="magenta", nl=False)
         return

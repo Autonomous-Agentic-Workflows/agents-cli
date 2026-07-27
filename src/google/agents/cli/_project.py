@@ -24,7 +24,6 @@ from pathlib import Path
 from typing import Any
 
 import click
-import yaml
 
 
 @dataclass
@@ -118,6 +117,7 @@ def read_project_config(project_dir: str | None = None) -> ProjectConfig:
 
     if manifest_path.exists():
         # Primary: read from manifest
+        import yaml
         with open(manifest_path, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
     elif pyproject_path.exists():

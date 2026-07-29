@@ -1,0 +1,9 @@
+# Minimal Cloud Build configuration to satisfy workspace check constraints and run tests.
+steps:
+  - name: 'python:3.12-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install uv
+        PYTHONPATH=src uv run --project docs python -m pytest tests/

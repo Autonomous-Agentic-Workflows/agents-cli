@@ -63,3 +63,76 @@ def test_redact_cmd_no_secrets():
     # Normal commands
     args = ["git", "commit", "-m", "regular commit message"]
     assert redact_cmd(args) == "git commit -m 'regular commit message'"
+
+
+def test_redact_cmd_case_insensitivity():
+    # Test case insensitivity for keys and options
+    args_1 = ["python", "-m", "main", "--Api-Key", "AIzaSyKey123"]
+    assert redact_cmd(args_1) == "python -m main --Api-Key '[REDACTED]'"
+
+    args_2 = ["env", "gemini_api_key=AIzaSyKey123", "python"]
+    assert redact_cmd(args_2) == "env 'gemini_api_key=[REDACTED]' python"
+
+    args_3 = ["python", "-m", "main", "--My-Token=secret123"]
+    assert redact_cmd(args_3) == "python -m main '--My-Token=[REDACTED]'"
+
+    args_4 = ["env", "MY_PASSWORD=secret", "python"]
+    assert redact_cmd(args_4) == "env 'MY_PASSWORD=[REDACTED]' python"
+
+
+def test_redact_cmd_comma_separated_lists():
+    # Test comma-separated option lists
+    args_1 = ["python", "-m", "main", "--options=api_key=123,token=456,other=789"]
+    assert (
+        redact_cmd(args_1)
+        == "python -m main '--options=api_key=[REDACTED],token=[REDACTED],other=789'"
+    )
+
+    args_2 = [
+        "python",
+        "-m",
+        "main",
+        "--config",
+        "secret=abc,credential=def,normal=ghi",
+    ]
+    assert (
+        redact_cmd(args_2)
+        == "python -m main --config 'secret=[REDACTED],credential=[REDACTED],normal=ghi'"
+    )
+
+
+def test_redact_cmd_exclusions():
+    # Test exclusions of non-sensitive terms like path, compat, pattern, template, key_id
+    args_1 = ["python", "-m", "main", "--path", "/usr/bin"]
+    assert redact_cmd(args_1) == "python -m main --path /usr/bin"
+
+    args_2 = ["python", "-m", "main", "--compat=yes"]
+    assert redact_cmd(args_2) == "python -m main --compat=yes"
+
+    args_3 = ["python", "-m", "main", "--pattern", "abc"]
+    assert redact_cmd(args_3) == "python -m main --pattern abc"
+
+    args_4 = ["python", "-m", "main", "--template=xyz"]
+    assert redact_cmd(args_4) == "python -m main --template=xyz"
+
+    args_5 = ["python", "-m", "main", "--key_id", "123"]
+    assert redact_cmd(args_5) == "python -m main --key_id 123"
+
+    # Test that words containing 'pat' or 'pass' as a substring (but not as standalone/separated parts) are NOT redacted
+    args_patch = ["python", "-m", "main", "--patch", "my_patch_value"]
+    assert redact_cmd(args_patch) == "python -m main --patch my_patch_value"
+
+    args_passenger = ["python", "-m", "main", "--passenger=active"]
+    assert redact_cmd(args_passenger) == "python -m main --passenger=active"
+
+    # Mixed case with some exclusions and some sensitive keys
+    args_6 = [
+        "python",
+        "-m",
+        "main",
+        "--config=api_key=123,path=/usr/bin,token=456,compat=yes",
+    ]
+    assert (
+        redact_cmd(args_6)
+        == "python -m main '--config=api_key=[REDACTED],path=/usr/bin,token=[REDACTED],compat=yes'"
+    )

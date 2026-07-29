@@ -26,40 +26,136 @@ import click
 from google.agents.cli import _tools
 
 
+def is_sensitive_key(key: str) -> bool:
+    """Check if a key (option name, env var name, etc.) is sensitive."""
+    key_lower = key.lower()
+
+    # Ignore non-sensitive terms to prevent false positives
+    non_sensitive_terms = ("path", "compat", "pattern", "template", "key_id")
+    if any(term in key_lower for term in non_sensitive_terms):
+        return False
+
+    # Standardize separator for api-key / api_key and remove leading dashes
+    normalized = key_lower.lstrip("-").replace("-", "_")
+
+    # Split key into components by underscores to do precise word matching
+    parts = normalized.split("_")
+
+    sensitive_terms = (
+        "api_key",
+        "token",
+        "secret",
+        "password",
+        "pat",
+        "pass",
+        "credential",
+    )
+
+    for term in sensitive_terms:
+        if "_" in term:
+            if term in normalized:
+                return True
+        elif term in ("pat", "pass"):
+            if any(part == term for part in parts):
+                return True
+        elif any(term in part for part in parts):
+            return True
+
+    return False
+
+
+def contains_sensitive_term(s: str) -> bool:
+    """Check if a string contains any sensitive term."""
+    s_lower = s.lower()
+
+    # Ignore non-sensitive terms to prevent false positives
+    non_sensitive_terms = ("path", "compat", "pattern", "template", "key_id")
+    if any(term in s_lower for term in non_sensitive_terms):
+        return False
+
+    normalized = s_lower.replace("-", "_")
+    parts = normalized.split("_")
+
+    sensitive_terms = (
+        "api_key",
+        "token",
+        "secret",
+        "password",
+        "pat",
+        "pass",
+        "credential",
+    )
+
+    for term in sensitive_terms:
+        if "_" in term:
+            if term in normalized:
+                return True
+        elif term in ("pat", "pass"):
+            if any(part == term for part in parts):
+                return True
+        elif any(term in part for part in parts):
+            return True
+
+    return False
+
+
+def redact_value_string(s: str) -> str:
+    """Redact sensitive info from a value string which might be a comma-separated list or a single k=v pair."""
+    if "," in s:
+        parts = s.split(",")
+        redacted_parts = []
+        for part in parts:
+            if "=" in part:
+                k, v = part.split("=", 1)
+                if is_sensitive_key(k):
+                    redacted_parts.append(f"{k}=[REDACTED]")
+                elif contains_sensitive_term(v):
+                    redacted_parts.append("[REDACTED]")
+                else:
+                    redacted_parts.append(part)
+            else:
+                if contains_sensitive_term(part):
+                    redacted_parts.append("[REDACTED]")
+                else:
+                    redacted_parts.append(part)
+        return ",".join(redacted_parts)
+    elif "=" in s:
+        k, v = s.split("=", 1)
+        if is_sensitive_key(k):
+            return f"{k}=[REDACTED]"
+        elif contains_sensitive_term(v):
+            return "[REDACTED]"
+        else:
+            return s
+    else:
+        if contains_sensitive_term(s):
+            return "[REDACTED]"
+        return s
+
+
 def redact_cmd(args: list[str]) -> str:
     """Mask sensitive information in command arguments and return joined string.
 
     Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
-    sensitive_options = ("--github-pat", "--api-key", "--api_key")
-    sensitive_prefixes = tuple(opt + "=" for opt in sensitive_options)
-
-    sensitive_env_vars = [
-        "GITHUB_PAT",
-        "GH_TOKEN",
-        "GITHUB_TOKEN",
-        "GITHUB_APP_KEY",
-        "GEMINI_API_KEY",
-        "GOOGLE_API_KEY",
-    ]
 
     for i, raw_arg in enumerate(args):
         arg = str(raw_arg)
-        if arg in sensitive_options and i + 1 < len(args):
-            redacted_cmd_list[i + 1] = "[REDACTED]"
-        elif arg.startswith(sensitive_prefixes):
-            opt_name, value = arg.split("=", 1)
-            redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
-        elif any(secret in arg for secret in sensitive_env_vars):
-            if "=" in arg:
-                key, sep, val = arg.partition("=")
-                if any(secret in key for secret in sensitive_env_vars):
-                    redacted_cmd_list[i] = f"{key}=[REDACTED]"
-                else:
-                    redacted_cmd_list[i] = "[REDACTED]"
+        if arg.startswith("-") and "=" not in arg:
+            if is_sensitive_key(arg):
+                if i + 1 < len(args):
+                    redacted_cmd_list[i + 1] = "[REDACTED]"
+        elif arg.startswith("-") and "=" in arg:
+            opt_name, val = arg.split("=", 1)
+            if is_sensitive_key(opt_name):
+                redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
             else:
-                redacted_cmd_list[i] = "[REDACTED]"
+                redacted_cmd_list[i] = f"{opt_name}={redact_value_string(val)}"
+        elif "=" in arg:
+            redacted_cmd_list[i] = redact_value_string(arg)
+        elif contains_sensitive_term(arg):
+            redacted_cmd_list[i] = "[REDACTED]"
 
     # Make sure we convert everything to string for shlex.join
     return shlex.join(str(a) for a in redacted_cmd_list)

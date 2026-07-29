@@ -22,6 +22,7 @@ import time
 from pathlib import Path
 
 import click
+import yaml
 
 # Pin the skills npm package to avoid executing an unverified version.
 SKILLS_NPX_PACKAGE = "skills@1.4.8"
@@ -49,8 +50,6 @@ def _parse_skill_version(skill_md: Path) -> str | None:
         logging.warning(f"Malformed skill file (incomplete frontmatter): {skill_md}")
         return None
     try:
-        import yaml
-
         frontmatter = yaml.safe_load(parts[1])
     except yaml.YAMLError:
         logging.warning(f"Malformed skill file (invalid YAML): {skill_md}")
@@ -82,7 +81,6 @@ def _find_installed_skills() -> dict[str, str]:
 
     try:
         from google.agents.cli._project import find_project_root
-
         project_root = find_project_root()
         if project_root:
             skills_dirs.append(project_root / "skills")

@@ -1,0 +1,8 @@
+name: "CodeQL Config"
+
+# Exclude scaffold template source trees that intentionally contain unresolved
+# cookiecutter/Jinja placeholders and are not executable project source.
+paths-ignore:
+  - "src/google/agents/cli/scaffold/agents/**"
+  - "src/google/agents/cli/scaffold/base_templates/**"
+  - "src/google/agents/cli/scaffold/deployment_targets/**"

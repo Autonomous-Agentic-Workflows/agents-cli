@@ -63,3 +63,47 @@ def test_redact_cmd_no_secrets():
     # Normal commands
     args = ["git", "commit", "-m", "regular commit message"]
     assert redact_cmd(args) == "git commit -m 'regular commit message'"
+
+
+def test_redact_cmd_security_enhancements():
+    # Case insensitivity
+    args_case = ["python", "-m", "main", "--API-Key", "AIzaSyKey123"]
+    assert redact_cmd(args_case) == "python -m main --API-Key '[REDACTED]'"
+
+    # Short terms boundary match (snake_case/kebab-case)
+    args_pat = ["env", "MY_GITHUB_PAT=12345", "python"]
+    assert redact_cmd(args_pat) == "env 'MY_GITHUB_PAT=[REDACTED]' python"
+
+    args_pass = ["env", "ADMIN_PASSWORD=secret", "python"]
+    assert redact_cmd(args_pass) == "env 'ADMIN_PASSWORD=[REDACTED]' python"
+
+    args_pass_short = ["env", "MY_PASS=123", "python"]
+    assert redact_cmd(args_pass_short) == "env 'MY_PASS=[REDACTED]' python"
+
+    # Avoid false positives for short terms containing 'pat' or 'pass' as substring
+    args_false_pos = [
+        "env",
+        "PATH=/bin",
+        "COMPAT_MODE=1",
+        "PATTERN=abc",
+        "TEMPLATE=xyz",
+        "KEY_ID=1",
+        "PATCH_LEVEL=2",
+        "PASSENGER=true",
+        "python",
+    ]
+    assert (
+        redact_cmd(args_false_pos)
+        == "env PATH=/bin COMPAT_MODE=1 PATTERN=abc TEMPLATE=xyz KEY_ID=1 PATCH_LEVEL=2 PASSENGER=true python"
+    )
+
+    # Comma-separated list option redaction
+    args_comma = [
+        "gcloud",
+        "--update-env-vars=GEMINI_API_KEY=123,ANOTHER_VAR=abc,DB_PASS=xyz",
+        "deploy",
+    ]
+    assert (
+        redact_cmd(args_comma)
+        == "gcloud '--update-env-vars=GEMINI_API_KEY=[REDACTED],ANOTHER_VAR=abc,DB_PASS=[REDACTED]' deploy"
+    )

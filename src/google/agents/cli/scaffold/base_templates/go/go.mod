@@ -1,4 +1,4 @@
-module {{cookiecutter.project_name}}
+module example.com/agent-template
 
 go 1.24.4
 

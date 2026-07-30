@@ -19,7 +19,7 @@ import (
 	"log"
 	"os"
 
-	"{{cookiecutter.project_name}}/agent"
+	"example.com/agent-template/agent"
 
 	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/joho/godotenv"

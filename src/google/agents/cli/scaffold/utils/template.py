@@ -1484,6 +1484,33 @@ def process_template(
                     shutil.rmtree(load_test_dir)
                     logging.debug(f"Prototype mode: deleted {load_test_dir}")
 
+            # Ensure go.mod uses the generated project name as module path (Go only)
+            if language == "go":
+                go_mod_path = final_destination / "go.mod"
+                if go_mod_path.exists():
+                    go_mod_content = go_mod_path.read_text(encoding="utf-8")
+                    if go_mod_content.startswith("module "):
+                        first_newline = go_mod_content.find("\n")
+                        if first_newline == -1:
+                            go_mod_content = f"module {project_name}\n"
+                        else:
+                            go_mod_content = (
+                                f"module {project_name}\n"
+                                + go_mod_content[first_newline + 1 :]
+                            )
+                        go_mod_path.write_text(go_mod_content, encoding="utf-8")
+
+                go_main_path = final_destination / "main.go"
+                if go_main_path.exists():
+                    go_main_content = go_main_path.read_text(encoding="utf-8")
+                    go_main_path.write_text(
+                        go_main_content.replace(
+                            "example.com/agent-template/agent",
+                            f"{project_name}/agent",
+                        ),
+                        encoding="utf-8",
+                    )
+
             # Handle pyproject.toml and uv.lock files (Python only)
             if language == "python":
                 if is_remote and remote_template_path:

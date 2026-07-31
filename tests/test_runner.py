@@ -63,3 +63,46 @@ def test_redact_cmd_no_secrets():
     # Normal commands
     args = ["git", "commit", "-m", "regular commit message"]
     assert redact_cmd(args) == "git commit -m 'regular commit message'"
+
+
+def test_redact_cmd_case_insensitivity():
+    # Verify case-insensitive matching for various sensitive keys
+    args = ["env", "gemini_api_key=AIzaSyKey123", "python"]
+    assert redact_cmd(args) == "env 'gemini_api_key=[REDACTED]' python"
+
+    args2 = ["env", "GitHub_PAT=pat_123", "python"]
+    assert redact_cmd(args2) == "env 'GitHub_PAT=[REDACTED]' python"
+
+    args3 = ["python", "-m", "main", "--API_KEY", "AIzaSyKey123"]
+    assert redact_cmd(args3) == "python -m main --API_KEY '[REDACTED]'"
+
+
+def test_redact_cmd_comma_separated():
+    # Comma-separated options / environment variable redactions
+    args = ["--options", "debug=true,api_key=123,verbose=false"]
+    assert redact_cmd(args) == "--options 'debug=true,api_key=[REDACTED],verbose=false'"
+
+    args2 = ["--options", "debug=true,gemini_api_key:123,verbose=false"]
+    assert redact_cmd(args2) == "--options 'debug=true,gemini_api_key:[REDACTED],verbose=false'"
+
+
+def test_redact_cmd_component_boundaries():
+    # Ensure short terms like pat and pass are matched on boundary components
+    # to avoid false positives (e.g., path, compat, compass, compat-mode, etc.)
+    args1 = ["--path", "/usr/bin"]
+    assert redact_cmd(args1) == "--path /usr/bin"
+
+    args2 = ["--compat-mode", "legacy"]
+    assert redact_cmd(args2) == "--compat-mode legacy"
+
+    args3 = ["--my-pat-value", "secret"]
+    assert redact_cmd(args3) == "--my-pat-value '[REDACTED]'"
+
+    args4 = ["--my-pat", "secret"]
+    assert redact_cmd(args4) == "--my-pat '[REDACTED]'"
+
+    args5 = ["--my-pass", "secret"]
+    assert redact_cmd(args5) == "--my-pass '[REDACTED]'"
+
+    args6 = ["--compass", "north"]
+    assert redact_cmd(args6) == "--compass north"

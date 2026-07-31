@@ -52,8 +52,6 @@ def _parse_skill_version(skill_md: Path) -> str | None:
     import yaml
 
     try:
-        # Lazy import yaml to speed up CLI startup time
-        import yaml
         frontmatter = yaml.safe_load(parts[1])
     except yaml.YAMLError:
         logging.warning(f"Malformed skill file (invalid YAML): {skill_md}")
@@ -77,45 +75,15 @@ def _find_installed_skills() -> dict[str, str]:
 
     result: dict[str, str] = {}
 
-    # Fast path: scan well-known global, local, and project paths directly
-    skills_dirs: list[Path] = [
-        Path.home() / ".agents" / "skills",
-        Path.cwd() / "skills",
-    ]
-
-    try:
-        from google.agents.cli._project import find_project_root
-        project_root = find_project_root()
-        if project_root:
-            skills_dirs.append(project_root / "skills")
-    except Exception:
-        pass
-
-    # Deduplicate paths while preserving order
-    seen_dirs = set()
-    unique_skills_dirs = []
-    for d in skills_dirs:
-        try:
-            resolved = d.resolve()
-            if resolved not in seen_dirs:
-                seen_dirs.add(resolved)
-                unique_skills_dirs.append(d)
-        except OSError:
-            if d not in seen_dirs:
-                seen_dirs.add(d)
-                unique_skills_dirs.append(d)
-
-    for skills_dir in unique_skills_dirs:
-        if skills_dir.is_dir():
-            for skill_dir in sorted(skills_dir.iterdir()):
-                if not skill_dir.name.startswith("google-agents-cli-"):
-                    continue
-                # If we already found this skill from another location, skip to avoid overriding
-                if skill_dir.name in result:
-                    continue
-                version = _parse_skill_version(skill_dir / "SKILL.md")
-                if version:
-                    result[skill_dir.name] = version
+    # Fast path: well-known global install location
+    skills_dir = Path.home() / ".agents" / "skills"
+    if skills_dir.is_dir():
+        for skill_dir in sorted(skills_dir.iterdir()):
+            if not skill_dir.name.startswith("google-agents-cli-"):
+                continue
+            version = _parse_skill_version(skill_dir / "SKILL.md")
+            if version:
+                result[skill_dir.name] = version
 
     if result:
         return result

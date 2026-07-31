@@ -32,13 +32,7 @@ def redact_cmd(args: list[str]) -> str:
     Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
-    sensitive_options = (
-        "--github-pat",
-        "--api-key",
-        "--api_key",
-        "--access-token",
-        "--access_token",
-    )
+    sensitive_options = ("--github-pat", "--api-key", "--api_key", "--access-token", "--access_token")
     sensitive_prefixes = tuple(opt + "=" for opt in sensitive_options)
 
     sensitive_env_vars = [
@@ -54,7 +48,7 @@ def redact_cmd(args: list[str]) -> str:
         "WIF_POOL_ID",
         "WIF_PROVIDER_ID",
         "ACCESS_TOKEN",
-        "API_KEY",
+        "API_KEY"
     ]
 
     for i, raw_arg in enumerate(args):
@@ -62,11 +56,11 @@ def redact_cmd(args: list[str]) -> str:
         if arg in sensitive_options and i + 1 < len(args):
             redacted_cmd_list[i + 1] = "[REDACTED]"
         elif arg.startswith(sensitive_prefixes):
-            opt_name, _ = arg.split("=", 1)
+            opt_name, value = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
         elif any(secret in arg for secret in sensitive_env_vars):
             if "=" in arg:
-                key, _, _ = arg.partition("=")
+                key, sep, val = arg.partition("=")
                 if any(secret in key for secret in sensitive_env_vars):
                     redacted_cmd_list[i] = f"{key}=[REDACTED]"
                 else:

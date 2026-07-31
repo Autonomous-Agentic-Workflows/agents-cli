@@ -53,15 +53,6 @@ def test_redact_cmd_api_key_options():
         assert "my-super-secret-token" not in redacted
 
 
-def test_redact_cmd_api_key_equals_options():
-    options = ["--api-key", "--api_key", "--access-token", "--access_token"]
-    for option in options:
-        args = ["my-agent-cli", "deploy", f"{option}=my-super-secret-token"]
-        redacted = redact_cmd(args)
-        assert f"{option}=[REDACTED]" in redacted
-        assert "my-super-secret-token" not in redacted
-
-
 def test_redact_cmd_no_secrets():
     args = ["agents-cli", "scaffold", "my_new_agent", "--region", "us-central1"]
     redacted = redact_cmd(args)

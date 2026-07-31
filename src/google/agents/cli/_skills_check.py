@@ -51,8 +51,6 @@ def _parse_skill_version(skill_md: Path) -> str | None:
         logging.warning(f"Malformed skill file (incomplete frontmatter): {skill_md}")
         return None
     try:
-        # Lazy import yaml to speed up CLI startup time
-        import yaml
         frontmatter = yaml.safe_load(parts[1])
     except yaml.YAMLError:
         logging.warning(f"Malformed skill file (invalid YAML): {skill_md}")

@@ -29,24 +29,53 @@ from google.agents.cli import _tools
 def redact_cmd(args: list[str]) -> str:
     """Mask sensitive information in command arguments and return joined string.
 
-    Masks arguments like --github-pat and environment variables containing secrets.
+    Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
-    for i, arg in enumerate(args):
-        if arg in ("--github-pat", "--api-key", "--api_key", "--access-token", "--access_token") and i + 1 < len(args):
-            redacted_cmd_list[i + 1] = "[REDACTED]"
-        elif any(
-            secret in arg
-            for secret in [
-                "GITHUB_PAT", "GH_TOKEN", "GITHUB_TOKEN", "GITHUB_APP_KEY",
-                "GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENAI_API_KEY",
-                "GCP_SERVICE_ACCOUNT_KEY", "SERVICE_ACCOUNT_KEY",
-                "WIF_POOL_ID", "WIF_PROVIDER_ID", "ACCESS_TOKEN", "API_KEY"
-            ]
-        ):
-            redacted_cmd_list[i] = "[REDACTED]"
+    sensitive_options = (
+        "--github-pat",
+        "--api-key",
+        "--api_key",
+        "--access-token",
+        "--access_token",
+    )
+    sensitive_prefixes = tuple(opt + "=" for opt in sensitive_options)
 
-    return shlex.join(redacted_cmd_list)
+    sensitive_env_vars = [
+        "GITHUB_PAT",
+        "GH_TOKEN",
+        "GITHUB_TOKEN",
+        "GITHUB_APP_KEY",
+        "GEMINI_API_KEY",
+        "GOOGLE_API_KEY",
+        "GOOGLE_GENAI_API_KEY",
+        "GCP_SERVICE_ACCOUNT_KEY",
+        "SERVICE_ACCOUNT_KEY",
+        "WIF_POOL_ID",
+        "WIF_PROVIDER_ID",
+        "ACCESS_TOKEN",
+        "API_KEY",
+    ]
+
+    for i, raw_arg in enumerate(args):
+        arg = str(raw_arg)
+        if arg in sensitive_options and i + 1 < len(args):
+            redacted_cmd_list[i + 1] = "[REDACTED]"
+        elif arg.startswith(sensitive_prefixes):
+            opt_name, _ = arg.split("=", 1)
+            redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
+        elif any(secret in arg for secret in sensitive_env_vars):
+            if "=" in arg:
+                key, _, _ = arg.partition("=")
+                if any(secret in key for secret in sensitive_env_vars):
+                    redacted_cmd_list[i] = f"{key}=[REDACTED]"
+                else:
+                    redacted_cmd_list[i] = "[REDACTED]"
+            else:
+                redacted_cmd_list[i] = "[REDACTED]"
+
+    # Make sure we convert everything to string for shlex.join
+    return shlex.join(str(a) for a in redacted_cmd_list)
 
 
 def run(
@@ -173,7 +202,9 @@ def run(
             )
             if captured:
                 detail = f"\n{captured}"
-        raise click.ClickException(f"{error_msg} (exit code {result.returncode}){detail}")
+        raise click.ClickException(
+            f"{error_msg} (exit code {result.returncode}){detail}"
+        )
 
     return result
 

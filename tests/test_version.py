@@ -101,5 +101,35 @@ def test_display_update_message_reads_cache_and_triggers_bg_check(
     mock_console_instance.print.assert_called()
     # Check that popen_resolved_detached was called to spawn the background check
     mock_popen_resolved_detached.assert_called_once()
+
+    # Validate the generated background Python payload (compile and execute)
+    call_args = mock_popen_resolved_detached.call_args[0][0]
+    import sys
+    assert call_args[0] == sys.executable
+    assert call_args[1] == "-c"
+    code_payload = call_args[2]
+
+    # 1. Compile check
+    compiled_code = compile(code_payload, "<string>", "exec")
+    assert compiled_code is not None
+
+    # 2. Execute with mocked urllib/sys.argv response
+    test_cache = tmp_path / ".acli_latest_version_test"
+    test_stamp = tmp_path / ".acli_update_check_test"
+
+    mock_response = MagicMock()
+    mock_context = mock_response.__enter__.return_value
+    mock_context.status = 200
+    mock_context.read.return_value = b'{"info": {"version": "2.0.0"}}'
+
+    with (
+        patch("urllib.request.urlopen", return_value=mock_response),
+        patch("sys.argv", [sys.executable, str(test_cache), str(test_stamp), "google-agents-cli"]),
+    ):
+        exec(compiled_code, {})
+
+    assert test_cache.read_text(encoding="utf-8") == "2.0.0"
+    assert float(test_stamp.read_text(encoding="utf-8").strip()) > 0.0
+
     # Check that timestamp was updated
     assert float(stamp_file.read_text(encoding="utf-8").strip()) > 0.0

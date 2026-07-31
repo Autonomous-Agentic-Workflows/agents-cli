@@ -32,7 +32,7 @@ def redact_cmd(args: list[str]) -> str:
     Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
-    sensitive_options = ("--github-pat", "--api-key", "--api_key")
+    sensitive_options = ("--github-pat", "--api-key", "--api_key", "--access-token", "--access_token")
     sensitive_prefixes = tuple(opt + "=" for opt in sensitive_options)
 
     sensitive_env_vars = [
@@ -42,6 +42,13 @@ def redact_cmd(args: list[str]) -> str:
         "GITHUB_APP_KEY",
         "GEMINI_API_KEY",
         "GOOGLE_API_KEY",
+        "GOOGLE_GENAI_API_KEY",
+        "GCP_SERVICE_ACCOUNT_KEY",
+        "SERVICE_ACCOUNT_KEY",
+        "WIF_POOL_ID",
+        "WIF_PROVIDER_ID",
+        "ACCESS_TOKEN",
+        "API_KEY"
     ]
 
     for i, raw_arg in enumerate(args):

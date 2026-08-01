@@ -31,35 +31,93 @@ def redact_cmd(args: list[str]) -> str:
 
     Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
     """
-    redacted_cmd_list = list(args)
-    sensitive_options = ("--github-pat", "--api-key", "--api_key")
-    sensitive_prefixes = tuple(opt + "=" for opt in sensitive_options)
+    import re
 
-    sensitive_env_vars = [
-        "GITHUB_PAT",
-        "GH_TOKEN",
-        "GITHUB_TOKEN",
-        "GITHUB_APP_KEY",
-        "GEMINI_API_KEY",
-        "GOOGLE_API_KEY",
-    ]
+    def _has_sensitive_word(s: str) -> bool:
+        s_low = s.lower()
+        long_terms = [
+            "api-key",
+            "api_key",
+            "app-key",
+            "app_key",
+            "token",
+            "secret",
+            "password",
+            "credential",
+        ]
+        if any(term in s_low for term in long_terms):
+            return True
 
+        # For short terms 'pat' and 'pass', check exact component boundaries defined by non-alphanumeric split
+        components = re.findall(r"[a-z0-9]+", s_low)
+        short_terms = {"pat", "pass"}
+        if any(c in short_terms for c in components):
+            return True
+
+        return False
+
+    def _is_sensitive_key(k: str) -> bool:
+        return _has_sensitive_word(k)
+
+    def _redact_value(val: str) -> str:
+        if "," in val:
+            parts = []
+            for part in val.split(","):
+                if "=" in part:
+                    k, s, v = part.partition("=")
+                    if _is_sensitive_key(k):
+                        parts.append(f"{k}=[REDACTED]")
+                    elif _has_sensitive_word(v):
+                        parts.append("[REDACTED]")
+                    else:
+                        parts.append(part)
+                else:
+                    if _has_sensitive_word(part):
+                        parts.append("[REDACTED]")
+                    else:
+                        parts.append(part)
+            return ",".join(parts)
+        else:
+            if "=" in val:
+                k, s, v = val.partition("=")
+                if _is_sensitive_key(k):
+                    return f"{k}=[REDACTED]"
+                elif _has_sensitive_word(v):
+                    return "[REDACTED]"
+                else:
+                    return val
+            else:
+                if _has_sensitive_word(val):
+                    return "[REDACTED]"
+                return val
+
+    redacted_cmd_list = []
     for i, raw_arg in enumerate(args):
         arg = str(raw_arg)
-        if arg in sensitive_options and i + 1 < len(args):
-            redacted_cmd_list[i + 1] = "[REDACTED]"
-        elif arg.startswith(sensitive_prefixes):
-            opt_name, value = arg.split("=", 1)
-            redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
-        elif any(secret in arg for secret in sensitive_env_vars):
+
+        # Check if previous argument was a sensitive option flag (starts with '-' and is sensitive, but no '=')
+        if i > 0:
+            prev_arg = str(args[i - 1])
+            if (
+                prev_arg.startswith("-")
+                and "=" not in prev_arg
+                and _is_sensitive_key(prev_arg)
+            ):
+                redacted_cmd_list.append("[REDACTED]")
+                continue
+
+        # Redact current argument
+        if arg.startswith("-"):
             if "=" in arg:
-                key, sep, val = arg.partition("=")
-                if any(secret in key for secret in sensitive_env_vars):
-                    redacted_cmd_list[i] = f"{key}=[REDACTED]"
+                opt_name, sep, val = arg.partition("=")
+                if _is_sensitive_key(opt_name):
+                    redacted_cmd_list.append(f"{opt_name}=[REDACTED]")
                 else:
-                    redacted_cmd_list[i] = "[REDACTED]"
+                    redacted_cmd_list.append(f"{opt_name}={_redact_value(val)}")
             else:
-                redacted_cmd_list[i] = "[REDACTED]"
+                redacted_cmd_list.append(arg)
+        else:
+            redacted_cmd_list.append(_redact_value(arg))
 
     # Make sure we convert everything to string for shlex.join
     return shlex.join(str(a) for a in redacted_cmd_list)

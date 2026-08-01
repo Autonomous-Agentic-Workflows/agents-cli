@@ -63,3 +63,52 @@ def test_redact_cmd_no_secrets():
     # Normal commands
     args = ["git", "commit", "-m", "regular commit message"]
     assert redact_cmd(args) == "git commit -m 'regular commit message'"
+
+
+def test_redact_cmd_dynamic_cases_and_false_positives():
+    # Dynamic case insensitivity
+    args_case = [
+        "env",
+        "google_api_key=AIzaSyKey123",
+        "gemini_api_key=AIzaSyKey123",
+        "gcloud",
+    ]
+    assert (
+        redact_cmd(args_case)
+        == "env 'google_api_key=[REDACTED]' 'gemini_api_key=[REDACTED]' gcloud"
+    )
+
+    # Multi-value comma separated list
+    args_comma = [
+        "gcloud",
+        "--update-env-vars",
+        "SOME_KEY=normal,API_KEY=secret_key,PORT=8080",
+    ]
+    assert (
+        redact_cmd(args_comma)
+        == "gcloud --update-env-vars 'SOME_KEY=normal,API_KEY=[REDACTED],PORT=8080'"
+    )
+
+    # Short terms matching boundaries
+    args_short_boundary_1 = ["gcloud", "--my-pat", "secret-pat"]
+    assert redact_cmd(args_short_boundary_1) == "gcloud --my-pat '[REDACTED]'"
+
+    args_short_boundary_2 = ["env", "MY_PASS=mypassword", "gcloud"]
+    assert redact_cmd(args_short_boundary_2) == "env 'MY_PASS=[REDACTED]' gcloud"
+
+    # False positives check
+    args_false_positives = [
+        "gcloud",
+        "--path=/var/logs",
+        "--compat=version2",
+        "--pattern=*.json",
+        "--template=default",
+        "--key-id=123",
+        "--patch=fix.diff",
+        "--passenger=5",
+    ]
+    # None of these should be redacted
+    assert (
+        redact_cmd(args_false_positives)
+        == "gcloud --path=/var/logs --compat=version2 '--pattern=*.json' --template=default --key-id=123 --patch=fix.diff --passenger=5"
+    )

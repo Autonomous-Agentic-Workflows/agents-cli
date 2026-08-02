@@ -1,0 +1,10 @@
+steps:
+  - name: 'ghcr.io/astral-sh/uv:latest'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        uv run --project docs python -m pytest tests/
+    env:
+      - 'PYTHONPATH=src'
+      - 'PYTHONDONTWRITEBYTECODE=1'

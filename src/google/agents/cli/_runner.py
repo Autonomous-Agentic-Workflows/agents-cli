@@ -26,40 +26,64 @@ import click
 from google.agents.cli import _tools
 
 
+def is_sensitive_key(key: str) -> bool:
+    """Check if a key name is sensitive (case-insensitive)."""
+    k = key.strip().lower()
+    k = k.lstrip('-')
+    longer_keys = ("api_key", "api-key", "apikey", "token", "secret", "password", "credential")
+    if any(lk in k for lk in longer_keys):
+        return True
+    import re
+    components = re.split(r'[-_]', k)
+    if any(sk in components for sk in ("pat", "pass")):
+        return True
+    return False
+
+
 def redact_cmd(args: list[str]) -> str:
     """Mask sensitive information in command arguments and return joined string.
 
     Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
-    sensitive_options = ("--github-pat", "--api-key", "--api_key")
-    sensitive_prefixes = tuple(opt + "=" for opt in sensitive_options)
-
-    sensitive_env_vars = [
+    sensitive_env_vars = (
         "GITHUB_PAT",
         "GH_TOKEN",
         "GITHUB_TOKEN",
         "GITHUB_APP_KEY",
         "GEMINI_API_KEY",
         "GOOGLE_API_KEY",
-    ]
+    )
 
     for i, raw_arg in enumerate(args):
         arg = str(raw_arg)
-        if arg in sensitive_options and i + 1 < len(args):
-            redacted_cmd_list[i + 1] = "[REDACTED]"
-        elif arg.startswith(sensitive_prefixes):
-            opt_name, value = arg.split("=", 1)
-            redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
-        elif any(secret in arg for secret in sensitive_env_vars):
-            if "=" in arg:
-                key, sep, val = arg.partition("=")
-                if any(secret in key for secret in sensitive_env_vars):
-                    redacted_cmd_list[i] = f"{key}=[REDACTED]"
+        if arg.startswith('-') and '=' not in arg and is_sensitive_key(arg):
+            if i + 1 < len(args):
+                redacted_cmd_list[i + 1] = "[REDACTED]"
+        elif '=' in arg:
+            left, sep, right = arg.partition('=')
+            if is_sensitive_key(left):
+                redacted_cmd_list[i] = f"{left}=[REDACTED]"
+            elif any(secret.lower() in arg.lower() for secret in sensitive_env_vars):
+                if any(secret.lower() in left.lower() for secret in sensitive_env_vars):
+                    redacted_cmd_list[i] = f"{left}=[REDACTED]"
                 else:
                     redacted_cmd_list[i] = "[REDACTED]"
             else:
-                redacted_cmd_list[i] = "[REDACTED]"
+                parts = right.split(',')
+                redacted_parts = []
+                for part in parts:
+                    if '=' in part:
+                        pk, psep, pv = part.partition('=')
+                        if is_sensitive_key(pk):
+                            redacted_parts.append(f"{pk}=[REDACTED]")
+                        else:
+                            redacted_parts.append(part)
+                    else:
+                        redacted_parts.append(part)
+                redacted_cmd_list[i] = f"{left}={','.join(redacted_parts)}"
+        elif any(secret.lower() in arg.lower() for secret in sensitive_env_vars):
+            redacted_cmd_list[i] = "[REDACTED]"
 
     # Make sure we convert everything to string for shlex.join
     return shlex.join(str(a) for a in redacted_cmd_list)

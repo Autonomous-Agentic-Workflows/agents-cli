@@ -26,40 +26,104 @@ import click
 from google.agents.cli import _tools
 
 
+def is_sensitive_key(key: str) -> bool:
+    """Check if a key (case-insensitive, hyphen-agnostic) is sensitive."""
+    key_lower = key.lower().lstrip("-").replace("_", "-")
+    for term in ("api-key", "api_key", "token", "secret", "password", "credential"):
+        normalized_term = term.replace("_", "-")
+        if normalized_term in key_lower:
+            return True
+
+    # Short terms boundary check (exact snake_case or kebab-case components)
+    components = [c for c in key_lower.split("-") if c]
+    for term in ("pat", "pass"):
+        if term in components:
+            return True
+
+    return False
+
+
+def contains_sensitive(s: str) -> bool:
+    """Check if string s (case-insensitive) contains any sensitive term."""
+    s_lower = s.lower().replace("_", "-")
+    for term in ("api-key", "api_key", "token", "secret", "password", "credential"):
+        normalized_term = term.replace("_", "-")
+        if normalized_term in s_lower:
+            return True
+
+    cleaned = "".join(c if c.isalnum() else "-" for c in s_lower)
+    components = [comp for comp in cleaned.split("-") if comp]
+    for term in ("pat", "pass"):
+        if term in components:
+            return True
+
+    return False
+
+
 def redact_cmd(args: list[str]) -> str:
     """Mask sensitive information in command arguments and return joined string.
 
     Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
-    sensitive_options = ("--github-pat", "--api-key", "--api_key")
-    sensitive_prefixes = tuple(opt + "=" for opt in sensitive_options)
-
-    sensitive_env_vars = [
-        "GITHUB_PAT",
-        "GH_TOKEN",
-        "GITHUB_TOKEN",
-        "GITHUB_APP_KEY",
-        "GEMINI_API_KEY",
-        "GOOGLE_API_KEY",
-    ]
+    redact_next = False
 
     for i, raw_arg in enumerate(args):
         arg = str(raw_arg)
-        if arg in sensitive_options and i + 1 < len(args):
-            redacted_cmd_list[i + 1] = "[REDACTED]"
-        elif arg.startswith(sensitive_prefixes):
-            opt_name, value = arg.split("=", 1)
-            redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
-        elif any(secret in arg for secret in sensitive_env_vars):
-            if "=" in arg:
-                key, sep, val = arg.partition("=")
-                if any(secret in key for secret in sensitive_env_vars):
-                    redacted_cmd_list[i] = f"{key}=[REDACTED]"
+
+        # 1. If we are told to redact the next argument
+        if redact_next:
+            redacted_cmd_list[i] = "[REDACTED]"
+            redact_next = False
+            continue
+
+        # 2. Check if the argument is a sensitive option flag itself (e.g. --api-key, --github-pat)
+        # It must start with "-" and NOT contain "="
+        if arg.startswith("-") and "=" not in arg:
+            # Strip leading hyphens to get flag name
+            flag_name = arg.lstrip("-")
+            if is_sensitive_key(flag_name):
+                # The next argument should be redacted
+                redact_next = True
+                continue
+
+        # 3. Handle cases where the argument contains "="
+        # (e.g. KEY=VALUE, --api-key=VALUE, or key1=val1,key2=val2)
+        if "=" in arg:
+            # We can have a comma-separated list of options
+            parts = arg.split(",")
+            new_parts = []
+            any_redacted = False
+            for part in parts:
+                if "=" in part:
+                    k, sep, v = part.partition("=")
+                    # Strip leading hyphens from key for sensitive check
+                    clean_k = k.lstrip("-")
+                    if is_sensitive_key(clean_k):
+                        new_parts.append(f"{k}=[REDACTED]")
+                        any_redacted = True
+                    elif contains_sensitive(part):
+                        # Even if the key is not sensitive, if the whole part contains sensitive info,
+                        # redact the whole part
+                        new_parts.append("[REDACTED]")
+                        any_redacted = True
+                    else:
+                        new_parts.append(part)
                 else:
-                    redacted_cmd_list[i] = "[REDACTED]"
-            else:
-                redacted_cmd_list[i] = "[REDACTED]"
+                    # No '=' in this part, check if it contains sensitive info
+                    if contains_sensitive(part):
+                        new_parts.append("[REDACTED]")
+                        any_redacted = True
+                    else:
+                        new_parts.append(part)
+
+            if any_redacted:
+                redacted_cmd_list[i] = ",".join(new_parts)
+                continue
+
+        # 4. If argument has no "=" but contains sensitive info
+        if contains_sensitive(arg):
+            redacted_cmd_list[i] = "[REDACTED]"
 
     # Make sure we convert everything to string for shlex.join
     return shlex.join(str(a) for a in redacted_cmd_list)

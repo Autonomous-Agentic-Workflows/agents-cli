@@ -63,3 +63,40 @@ def test_redact_cmd_no_secrets():
     # Normal commands
     args = ["git", "commit", "-m", "regular commit message"]
     assert redact_cmd(args) == "git commit -m 'regular commit message'"
+
+
+def test_redact_cmd_case_insensitive():
+    # Case insensitivity for options and env vars
+    args_1 = ["python", "-m", "main", "--API-KEY", "AIzaSyKey123"]
+    assert redact_cmd(args_1) == "python -m main --API-KEY '[REDACTED]'"
+
+    args_2 = ["env", "Gemini_Api_Key=AIzaSyKey123", "python"]
+    assert redact_cmd(args_2) == "env 'Gemini_Api_Key=[REDACTED]' python"
+
+
+def test_redact_cmd_short_terms_boundaries():
+    # Exact component boundaries for 'pat' and 'pass'
+    assert redact_cmd(["gcloud", "--path", "/my/path"]) == "gcloud --path /my/path"
+    assert redact_cmd(["gcloud", "--compat", "true"]) == "gcloud --compat true"
+    assert redact_cmd(["gcloud", "--pattern", "regex"]) == "gcloud --pattern regex"
+    assert redact_cmd(["gcloud", "--template", "tmpl"]) == "gcloud --template tmpl"
+    assert redact_cmd(["gcloud", "--key_id", "key123"]) == "gcloud --key_id key123"
+    assert redact_cmd(["gcloud", "--patch", "v1"]) == "gcloud --patch v1"
+    assert redact_cmd(["gcloud", "--passenger", "true"]) == "gcloud --passenger true"
+    assert redact_cmd(["gcloud", "bypass"]) == "gcloud bypass"
+
+    # Positive matches
+    assert redact_cmd(["gcloud", "--my-pat", "123"]) == "gcloud --my-pat '[REDACTED]'"
+    assert redact_cmd(["gcloud", "--db-pass", "123"]) == "gcloud --db-pass '[REDACTED]'"
+
+
+def test_redact_cmd_comma_separated_lists():
+    # Comma-separated option lists
+    args = ["gcloud", "deploy", "--options=foo=bar,api_key=secret_123,baz=qux"]
+    assert (
+        redact_cmd(args)
+        == "gcloud deploy '--options=foo=bar,api_key=[REDACTED],baz=qux'"
+    )
+
+    args_2 = ["gcloud", "deploy", "foo=bar,pat=abc"]
+    assert redact_cmd(args_2) == "gcloud deploy 'foo=bar,pat=[REDACTED]'"

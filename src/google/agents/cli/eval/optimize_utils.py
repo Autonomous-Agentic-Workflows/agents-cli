@@ -121,7 +121,11 @@ def _to_adk_evalset_dict(dataset_data: dict, app_name: str, eval_set_id: str) ->
 
         adk_eval_case = {
             "eval_id": case.get("eval_case_id") or case.get("eval_id") or f"case_{i}",
-            "session_input": {"app_name": app_name, "user_id": "eval_user", "state": {}},
+            "session_input": {
+                "app_name": app_name,
+                "user_id": "eval_user",
+                "state": {},
+            },
         }
 
         # Map rubrics from case.get("rubrics") or rubric_groups

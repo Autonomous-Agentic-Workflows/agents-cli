@@ -89,7 +89,9 @@ def _build_psc_interface_config(
     Returns None when no networking flags are set.
     Raises ClickException when DNS peering flags are used without --network-attachment.
     """
-    has_dns_peering = any([dns_peering_domain, dns_peering_project, dns_peering_network])
+    has_dns_peering = any(
+        [dns_peering_domain, dns_peering_project, dns_peering_network]
+    )
 
     if not network_attachment and not has_dns_peering:
         return None
@@ -749,7 +751,9 @@ def cmd_deploy(
 
     elif cfg.deployment_target == "gke":
         if no_wait:
-            raise click.ClickException("--no-wait is not supported for GKE deployments.")
+            raise click.ClickException(
+                "--no-wait is not supported for GKE deployments."
+            )
         _deploy_gke(
             project=project,
             region=region,
@@ -795,7 +799,9 @@ def _check_deploy_status(
     elif cfg.deployment_target == "gke":
         raise click.ClickException("--status is not supported for GKE deployments.")
     else:
-        raise click.ClickException(f"Unknown deployment target: {cfg.deployment_target}")
+        raise click.ClickException(
+            f"Unknown deployment target: {cfg.deployment_target}"
+        )
 
 
 def _check_cloud_run_status(
@@ -1017,7 +1023,9 @@ def _deploy_gke(
 
     # Step 3: Build and push container image (local dev only)
     if not image:
-        image = f"{region}-docker.pkg.dev/{project}/{service_name}/{service_name}:latest"
+        image = (
+            f"{region}-docker.pkg.dev/{project}/{service_name}/{service_name}:latest"
+        )
         click.echo(f"\n🐳 Building container image: {image}")
         _build_image_with_cloud_build(image=image, project=project)
 
@@ -1116,7 +1124,9 @@ def _list_deployments(cfg: ProjectConfig, project: str | None, region: str) -> N
     elif cfg.deployment_target == "gke":
         _list_gke_deployments()
     else:
-        raise click.ClickException(f"Unknown deployment target: {cfg.deployment_target}")
+        raise click.ClickException(
+            f"Unknown deployment target: {cfg.deployment_target}"
+        )
 
 
 def _list_agent_runtime_deployments(project: str | None, location: str) -> None:

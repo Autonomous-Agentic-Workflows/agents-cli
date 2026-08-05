@@ -376,7 +376,9 @@ def main(argv=None):
         print(f"[generate] inference {i + 1}/{n_cases}", flush=True)
         case = _normalize_agent_data(case, root_agent_name)
         agent = _load_fresh_agent(agents_dir, agent_name)
-        single = types.EvaluationDataset(eval_cases=[types.EvalCase.model_validate(case)])
+        single = types.EvaluationDataset(
+            eval_cases=[types.EvalCase.model_validate(case)]
+        )
         try:
             partial = client.evals.run_inference(src=single, agent=agent)
         except Exception as exc:

@@ -65,7 +65,9 @@ def _load_configs_and_datasets(
             train_dataset_path = combined_config.get("train_dataset")
             validation_dataset_path = combined_config.get("validation_dataset")
             log_level = combined_config.get("log_level", "WARNING")
-            print_detailed_results = combined_config.get("print_detailed_results", False)
+            print_detailed_results = combined_config.get(
+                "print_detailed_results", False
+            )
 
             if train_dataset_path is not None:
                 with open(train_dataset_path, encoding="utf-8") as f_in:

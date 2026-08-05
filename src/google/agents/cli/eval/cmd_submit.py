@@ -35,7 +35,9 @@ from google.agents.cli.eval.eval_utils import (
 def _get_eval_client(project: str | None, region: str | None) -> vertexai.Client:
     """Resolves GCP project and region, then initializes the Vertex AI Client."""
     resolved_project = _project.resolve_gcp_project(project, required=True)
-    return vertexai.Client(project=resolved_project, location=resolve_eval_region(region))
+    return vertexai.Client(
+        project=resolved_project, location=resolve_eval_region(region)
+    )
 
 
 @click.command("submit")
@@ -165,7 +167,9 @@ def cmd_results(
     console.print(f"Retrieving results for evaluation run [cyan]{run_id}[/cyan]...")
     try:
         client = _get_eval_client(project, region)
-        run = client.evals.get_evaluation_run(name=run_id, include_evaluation_items=True)
+        run = client.evals.get_evaluation_run(
+            name=run_id, include_evaluation_items=True
+        )
 
         table = Table(
             title="Evaluation Run Status",

@@ -44,7 +44,9 @@ def _read_metadata() -> dict[str, Any]:
         with open(METADATA_FILE, encoding="utf-8") as f:
             data = json.load(f)
     except (json.JSONDecodeError, OSError) as e:
-        logging.warning("Ignoring corrupt %s (%s); treating as empty.", METADATA_FILE, e)
+        logging.warning(
+            "Ignoring corrupt %s (%s); treating as empty.", METADATA_FILE, e
+        )
         return {}
     if not isinstance(data, dict):
         logging.warning(

@@ -252,7 +252,9 @@ def create_github_connection(
                 raise Exception(f"Unexpected connection status: {status}")
 
         except Exception as e:
-            click.secho(f"❌ Failed to check connection status: {e}", bold=True, fg="red")
+            click.secho(
+                f"❌ Failed to check connection status: {e}", bold=True, fg="red"
+            )
             raise
 
     raise TimeoutError("GitHub connection authorization timed out after 5 minutes")

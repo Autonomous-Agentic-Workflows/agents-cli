@@ -221,9 +221,12 @@ def link_skills_for_antigravity(
         # may already hold skills from other sources. A top-level symlink would
         # fail (dir exists) or shadow those; per-skill links coexist with them.
         linked = sum(
-            _link_dir(skill_dir, target_root / skill_dir.name) for skill_dir in skill_dirs
+            _link_dir(skill_dir, target_root / skill_dir.name)
+            for skill_dir in skill_dirs
         )
         _prune_dead_links(target_root, source_root)
         if linked:
-            summary.append(f"Linked {linked} skill(s) into {_display(target_root, home)}")
+            summary.append(
+                f"Linked {linked} skill(s) into {_display(target_root, home)}"
+            )
     return summary

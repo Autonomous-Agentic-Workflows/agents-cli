@@ -113,7 +113,9 @@ def _print_sdk_compatibility_warning(current_version: str) -> None:
     console.print(
         f"\nYour current google-cloud-aiplatform version ({current_version}) has a known"
     )
-    console.print("issue with Agent Runtime that causes 'Session not found' errors when")
+    console.print(
+        "issue with Agent Runtime that causes 'Session not found' errors when"
+    )
     console.print("registering to Gemini Enterprise.")
     console.print(
         "\nSee: https://github.com/GoogleCloudPlatform/agent-starter-pack/issues/495"
@@ -765,8 +767,12 @@ def prompt_for_gemini_enterprise_components(
         # If user selected custom entry (0), fall through to manual entry
 
     else:
-        console.print(f"\n⚠️  No Gemini Enterprise apps found in project {project_number}")
-        console.print("You can enter the details manually or try a different project.\n")
+        console.print(
+            f"\n⚠️  No Gemini Enterprise apps found in project {project_number}"
+        )
+        console.print(
+            "You can enter the details manually or try a different project.\n"
+        )
         retry = click.confirm("Try a different project?", default=False)
         if retry:
             return prompt_for_gemini_enterprise_components(None)
@@ -899,7 +905,9 @@ def _upsert_agent(
     Returns:
         Tuple of (API response dict, action) where action is "created" or "updated".
     """
-    existing_agent = _find_existing_agent(list_url=list_url, headers=headers, match=match)
+    existing_agent = _find_existing_agent(
+        list_url=list_url, headers=headers, match=match
+    )
 
     try:
         if existing_agent:
@@ -911,7 +919,9 @@ def _upsert_agent(
             action = "updated"
         else:
             console.print("  No matching agent found; creating a new registration.")
-            response = requests.post(list_url, headers=headers, json=payload, timeout=30)
+            response = requests.post(
+                list_url, headers=headers, json=payload, timeout=30
+            )
             action = "created"
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
@@ -1578,7 +1588,9 @@ def register_gemini_enterprise(
                 if metadata_id:
                     # Use metadata value directly without prompting in non-interactive mode
                     resolved_agent_runtime_id = metadata_id
-                    console.print(f"Using Agent Runtime ID from metadata: {metadata_id}")
+                    console.print(
+                        f"Using Agent Runtime ID from metadata: {metadata_id}"
+                    )
                 elif interactive:
                     resolved_agent_runtime_id = prompt_for_agent_runtime_id(None)
                 else:

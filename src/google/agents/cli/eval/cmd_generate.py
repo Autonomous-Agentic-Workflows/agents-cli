@@ -137,7 +137,9 @@ def cmd_generate(
         try:
             data = json.load(f)
         except json.JSONDecodeError as exc:
-            raise click.ClickException(f"Dataset file is not valid JSON: {exc}") from exc
+            raise click.ClickException(
+                f"Dataset file is not valid JSON: {exc}"
+            ) from exc
 
     eval_cases = data.get("eval_cases")
     if not eval_cases:

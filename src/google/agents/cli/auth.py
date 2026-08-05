@@ -58,7 +58,9 @@ def _api_key_instructions(var_name):
     click.echo(
         "  To persist this variable across sessions, you can add it to your shell profile."
     )
-    click.echo("  For example, add the export command above to your shell's startup file")
+    click.echo(
+        "  For example, add the export command above to your shell's startup file"
+    )
     click.echo("  (e.g., ~/.bashrc, ~/.zshrc, or ~/.profile).")
     click.echo()
     click.echo(
@@ -238,7 +240,9 @@ def _setup_gemini_api_key():
 
     url = "https://aistudio.google.com/apikey"
     click.echo("  We'll open Google AI Studio in your browser.")
-    click.echo("  Create or copy an API key, then come back here for more instructions.")
+    click.echo(
+        "  Create or copy an API key, then come back here for more instructions."
+    )
     click.echo()
     click.secho(f"  {url}", fg="cyan")
     click.echo()
@@ -278,7 +282,9 @@ def _setup_express_mode():
 
     url = "https://cloud.google.com/vertex-ai/generative-ai/docs/start/api-keys"
     click.echo("  We'll open the Vertex AI API keys page in your browser.")
-    click.echo("  Create or copy an API key, then come back here for more instructions.")
+    click.echo(
+        "  Create or copy an API key, then come back here for more instructions."
+    )
     click.echo()
     click.secho(f"  {url}", fg="cyan")
     click.echo()

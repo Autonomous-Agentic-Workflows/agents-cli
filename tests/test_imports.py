@@ -37,4 +37,6 @@ print("OK")
         capture_output=True,
         text=True,
     )
-    assert result.returncode == 0, f"Import check failed: {result.stdout}\n{result.stderr}"
+    assert result.returncode == 0, (
+        f"Import check failed: {result.stdout}\n{result.stderr}"
+    )

@@ -130,7 +130,9 @@ def cmd_analyze(
     try:
         client = vertexai.Client(project=resolved_project, location=resolved_location)
     except Exception as e:
-        raise click.ClickException(f"Failed to instantiate Vertex AI Client: {e}") from e
+        raise click.ClickException(
+            f"Failed to instantiate Vertex AI Client: {e}"
+        ) from e
 
     config = {}
     if top_k is not None:

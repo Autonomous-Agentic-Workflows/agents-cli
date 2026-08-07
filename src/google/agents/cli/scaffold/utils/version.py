@@ -26,6 +26,7 @@ PACKAGE_NAME = "google-agents-cli"
 UNKNOWN_VERSION = "0.0.0"
 _UPDATE_CHECK_INTERVAL = 12 * 60 * 60  # 12 hours in seconds
 _UPDATE_CHECK_STAMP = Path.home() / ".agents" / ".acli_update_check"
+_LATEST_VERSION_CACHE = Path.home() / ".agents" / ".acli_latest_version"
 
 
 def _update_check_is_due() -> bool:
@@ -99,33 +100,74 @@ def check_for_updates() -> tuple[bool, str, str]:
 
 
 def display_update_message() -> None:
-    """Check for updates and display a message if an update is available."""
-    if not _update_check_is_due():
-        return
+    """Check for updates and display a message if an update is available.
 
+    Performance Optimization (⚡ Bolt):
+    To keep CLI startup instantaneous, this function avoids blocking network I/O
+    on the main thread. It immediately reads the latest known version from a local
+    cache file (~/.agents/.acli_latest_version). If the check interval (12 hours)
+    is due, it spawns a detached background Python subprocess to asynchronously
+    query PyPI and refresh the cache, leaving the main execution thread completely
+    unimpeded.
+    """
+    latest = None
     try:
-        needs_update, current, latest = check_for_updates()
+        if _LATEST_VERSION_CACHE.is_file():
+            latest = _LATEST_VERSION_CACHE.read_text(encoding="utf-8").strip()
+    except Exception as e:
+        logging.debug(f"Error reading cached version: {e}")
 
-        # We only record the check if we successfully queried it
-        _record_update_check()
-
-        if needs_update:
-            # Lazy import Console to speed up CLI startup time
+    # Display update warning if cached version is newer than current
+    if latest and latest != UNKNOWN_VERSION:
+        try:
+            # Lazy import packaging.version and rich to save startup overhead
+            from packaging import version as pkg_version
             from rich.console import Console
 
-            console = Console()
-            console.print(
-                f"\n[yellow]⚠️  Update available: {current} → {latest}[/]",
-                highlight=False,
+            current = get_current_version()
+            needs_update = pkg_version.parse(latest) > pkg_version.parse(current)
+
+            if needs_update:
+                console = Console()
+                console.print(
+                    f"\n[yellow]⚠️  Update available: {current} → {latest}[/]",
+                    highlight=False,
+                )
+                console.print(
+                    f"[yellow]Run `uv tool upgrade {PACKAGE_NAME}` to update.[/]",
+                    highlight=False,
+                )
+                console.print(
+                    f"[dim]If you installed differently: pip install --upgrade {PACKAGE_NAME} | pipx upgrade {PACKAGE_NAME}[/]",
+                    highlight=False,
+                )
+        except Exception as e:
+            logging.debug(f"Error checking cached updates: {e}")
+
+    # Asynchronously fetch the latest version in a detached background process if interval is due
+    if _update_check_is_due():
+        try:
+            _record_update_check()
+            import sys
+            from google.agents.cli._runner import popen_resolved_detached
+
+            # Lightweight Python snippet using standard library only (no external deps)
+            python_code = (
+                "import urllib.request, json\n"
+                "from pathlib import Path\n"
+                "try:\n"
+                f"    req = urllib.request.Request('https://pypi.org/pypi/{PACKAGE_NAME}/json')\n"
+                "    with urllib.request.urlopen(req, timeout=5) as r:\n"
+                "        data = json.loads(r.read().decode('utf-8'))\n"
+                "        latest = data.get('info', {}).get('version')\n"
+                "        if latest:\n"
+                f"            cache_path = Path({repr(str(_LATEST_VERSION_CACHE))})\n"
+                "            cache_path.parent.mkdir(parents=True, exist_ok=True)\n"
+                "            cache_path.write_text(latest, encoding='utf-8')\n"
+                "except Exception:\n"
+                "    pass"
             )
-            console.print(
-                f"[yellow]Run `uv tool upgrade {PACKAGE_NAME}` to update.[/]",
-                highlight=False,
-            )
-            console.print(
-                f"[dim]If you installed differently: pip install --upgrade {PACKAGE_NAME} | pipx upgrade {PACKAGE_NAME}[/]",
-                highlight=False,
-            )
-    except Exception as e:
-        # Don't let version checking errors affect the CLI
-        logging.debug(f"Error checking for updates: {e}")
+            popen_resolved_detached([sys.executable, "-c", python_code])
+        except Exception as e:
+            # Fail silently to ensure CLI is never blocked or broken
+            logging.debug(f"Error spawning background update check: {e}")

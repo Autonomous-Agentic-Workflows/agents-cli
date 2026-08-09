@@ -26,6 +26,7 @@ PACKAGE_NAME = "google-agents-cli"
 UNKNOWN_VERSION = "0.0.0"
 _UPDATE_CHECK_INTERVAL = 12 * 60 * 60  # 12 hours in seconds
 _UPDATE_CHECK_STAMP = Path.home() / ".agents" / ".acli_update_check"
+_LATEST_VERSION_CACHE = Path.home() / ".agents" / ".acli_latest_version"
 
 
 def _update_check_is_due() -> bool:
@@ -75,7 +76,13 @@ def get_latest_version() -> str:
         import requests
         response = requests.get(f"https://pypi.org/pypi/{PACKAGE_NAME}/json", timeout=2)
         if response.status_code == 200:
-            return response.json()["info"]["version"]
+            latest = response.json()["info"]["version"]
+            try:
+                _LATEST_VERSION_CACHE.parent.mkdir(parents=True, exist_ok=True)
+                _LATEST_VERSION_CACHE.write_text(latest.strip(), encoding="utf-8")
+            except OSError:
+                pass
+            return latest
         return UNKNOWN_VERSION
     except Exception:
         return UNKNOWN_VERSION  # PyPI couldn't be reached
@@ -100,32 +107,75 @@ def check_for_updates() -> tuple[bool, str, str]:
 
 def display_update_message() -> None:
     """Check for updates and display a message if an update is available."""
-    if not _update_check_is_due():
-        return
-
+    # Read the latest cached version instantly from local cache
     try:
-        needs_update, current, latest = check_for_updates()
+        current = get_current_version()
+        cached_latest = UNKNOWN_VERSION
+        if _LATEST_VERSION_CACHE.is_file():
+            cached_latest = _LATEST_VERSION_CACHE.read_text(encoding="utf-8").strip() or UNKNOWN_VERSION
 
-        # We only record the check if we successfully queried it
-        _record_update_check()
+        if cached_latest != UNKNOWN_VERSION:
+            # Lazy import packaging.version to speed up CLI startup time
+            from packaging import version as pkg_version
+            try:
+                if pkg_version.parse(cached_latest) > pkg_version.parse(current):
+                    # Lazy import Console to speed up CLI startup time
+                    from rich.console import Console
 
-        if needs_update:
-            # Lazy import Console to speed up CLI startup time
-            from rich.console import Console
-
-            console = Console()
-            console.print(
-                f"\n[yellow]⚠️  Update available: {current} → {latest}[/]",
-                highlight=False,
-            )
-            console.print(
-                f"[yellow]Run `uv tool upgrade {PACKAGE_NAME}` to update.[/]",
-                highlight=False,
-            )
-            console.print(
-                f"[dim]If you installed differently: pip install --upgrade {PACKAGE_NAME} | pipx upgrade {PACKAGE_NAME}[/]",
-                highlight=False,
-            )
+                    console = Console()
+                    console.print(
+                        f"\n[yellow]⚠️  Update available: {current} → {cached_latest}[/]",
+                        highlight=False,
+                    )
+                    console.print(
+                        f"[yellow]Run `uv tool upgrade {PACKAGE_NAME}` to update.[/]",
+                        highlight=False,
+                    )
+                    console.print(
+                        f"[dim]If you installed differently: pip install --upgrade {PACKAGE_NAME} | pipx upgrade {PACKAGE_NAME}[/]",
+                        highlight=False,
+                    )
+            except Exception:
+                pass
     except Exception as e:
-        # Don't let version checking errors affect the CLI
-        logging.debug(f"Error checking for updates: {e}")
+        logging.debug(f"Error reading cached version: {e}")
+
+    # Spawn background update check if the check interval is due
+    if _update_check_is_due():
+        try:
+            # Record the update check first to prevent multiple spawns
+            _record_update_check()
+
+            import subprocess
+            import sys
+            from google.agents.cli._runner import popen_resolved_detached
+
+            script = f"""import urllib.request
+import json
+from pathlib import Path
+
+cache_path = Path({repr(str(_LATEST_VERSION_CACHE))})
+try:
+    req = urllib.request.Request(
+        "https://pypi.org/pypi/google-agents-cli/json",
+        headers={{"User-Agent": "google-agents-cli-updater"}}
+    )
+    with urllib.request.urlopen(req, timeout=5) as r:
+        if r.status == 200:
+            data = json.loads(r.read().decode("utf-8"))
+            latest = data.get("info", {{}}).get("version")
+            if latest:
+                cache_path.parent.mkdir(parents=True, exist_ok=True)
+                cache_path.write_text(latest.strip(), encoding="utf-8")
+except Exception:
+    pass
+"""
+            popen_resolved_detached(
+                [sys.executable, "-c", script],
+                resolve_executable=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception as e:
+            # Don't let background spawning errors affect the CLI
+            logging.debug(f"Error spawning background update check: {e}")

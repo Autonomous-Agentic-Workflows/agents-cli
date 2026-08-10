@@ -7,3 +7,7 @@
 ## 2026-03-06 - Eager Imports in Global Paths
 **Learning:** Even when a module is imported only to read metadata or perform quick checks, eager imports of heavy libraries (e.g. `requests`, `rich`, `packaging`, `yaml`) inside those modules severely degrade CLI startup time (adding ~130ms+ overhead even on fast-paths where the checks are not due). Moving them to local imports inside specific check functions cuts startup latency in half.
 **Action:** Defensively lazy-import any heavy external libraries in modules that are imported during CLI startup or fast-path checks.
+
+## 2026-03-07 - Cross-Platform Path Handling in Detached Python Processes
+**Learning:** Spawning detached Python processes with inline code snippets (e.g. via `python -c "..."`) that interpolate filesystem paths can fail on Windows with `SyntaxError` due to unicode escapes of backslashes (e.g., `C:\Users\username...` containing `\U`).
+**Action:** When interpolating file paths into inline Python code snippets for detached processes, always convert the Path object to a POSIX path using `.as_posix()` to guarantee forward slashes.

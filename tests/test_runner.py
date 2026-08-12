@@ -63,3 +63,37 @@ def test_redact_cmd_no_secrets():
     # Normal commands
     args = ["git", "commit", "-m", "regular commit message"]
     assert redact_cmd(args) == "git commit -m 'regular commit message'"
+
+
+def test_redact_cmd_case_insensitive_and_extended():
+    # Case insensitive option flags (separate value)
+    args_1 = ["python", "main.py", "--API-Key", "AIzaSyKey123"]
+    assert redact_cmd(args_1) == "python main.py --API-Key '[REDACTED]'"
+
+    # Case insensitive option flags (equals format)
+    args_2 = ["python", "main.py", "--PASSWORD=my_secret_pass"]
+    assert redact_cmd(args_2) == "python main.py '--PASSWORD=[REDACTED]'"
+
+    # Case insensitive env vars
+    args_3 = ["env", "gemini_api_key=AIzaSyKey123", "python"]
+    assert redact_cmd(args_3) == "env 'gemini_api_key=[REDACTED]' python"
+
+    args_4 = ["env", "PASSWORD=super_secret_password", "python"]
+    assert redact_cmd(args_4) == "env 'PASSWORD=[REDACTED]' python"
+
+    args_5 = ["env", "client_secret=secret123", "python"]
+    assert redact_cmd(args_5) == "env 'client_secret=[REDACTED]' python"
+
+    # Option flags with other newly supported credential options
+    args_6 = ["python", "main.py", "--client-secret", "sec_123"]
+    assert redact_cmd(args_6) == "python main.py --client-secret '[REDACTED]'"
+
+    args_7 = ["python", "main.py", "--access_token=token_123"]
+    assert redact_cmd(args_7) == "python main.py '--access_token=[REDACTED]'"
+
+    args_8 = ["python", "main.py", "--auth-token", "auth_123"]
+    assert redact_cmd(args_8) == "python main.py --auth-token '[REDACTED]'"
+
+    # Env var containing name in value part gets fully redacted
+    args_9 = ["env", "SOME_VAR=my_password_value", "python"]
+    assert redact_cmd(args_9) == "env '[REDACTED]' python"

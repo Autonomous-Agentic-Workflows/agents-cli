@@ -63,3 +63,29 @@ def test_redact_cmd_no_secrets():
     # Normal commands
     args = ["git", "commit", "-m", "regular commit message"]
     assert redact_cmd(args) == "git commit -m 'regular commit message'"
+
+
+def test_redact_cmd_case_insensitive_and_dynamic_keys():
+    # Custom API keys, tokens, and passwords
+    args = ["my-cli", "--hf-token", "hf_secret123", "--db-password", "supersecurepassword", "--some-secret", "abc"]
+    assert redact_cmd(args) == "my-cli --hf-token '[REDACTED]' --db-password '[REDACTED]' --some-secret '[REDACTED]'"
+
+    # Equals format
+    args_eq = ["my-cli", "--HF_TOKEN=hf_secret123", "--DB-PASSWORD=supersecurepassword", "--SOME_SECRET=abc"]
+    assert redact_cmd(args_eq) == "my-cli '--HF_TOKEN=[REDACTED]' '--DB-PASSWORD=[REDACTED]' '--SOME_SECRET=[REDACTED]'"
+
+
+def test_redact_cmd_ignored_keys():
+    # Ignored keywords like "path", "compat", "pattern", "template", "key_id" should not be redacted
+    args = ["my-cli", "--token-path", "/usr/bin/token", "--compat-secret", "val", "--regex-pattern", "some-pattern", "--secret-template", "tpl", "--api-key-id", "123"]
+    assert redact_cmd(args) == "my-cli --token-path /usr/bin/token --compat-secret val --regex-pattern some-pattern --secret-template tpl --api-key-id 123"
+
+
+def test_redact_cmd_inline_comma_separated():
+    # Options that are comma-separated and contain sensitive sub-keys
+    args = ["my-cli", "--options", "arg1=val1,api_key=secret_123,arg2=val2,password=secret_pass"]
+    assert redact_cmd(args) == "my-cli --options 'arg1=val1,api_key=[REDACTED],arg2=val2,password=[REDACTED]'"
+
+    # Option containing no keys but containing a comma-separated list
+    args_plain = ["my-cli", "--options", "a,b,c"]
+    assert redact_cmd(args_plain) == "my-cli --options a,b,c"

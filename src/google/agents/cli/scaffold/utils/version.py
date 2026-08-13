@@ -26,6 +26,7 @@ PACKAGE_NAME = "google-agents-cli"
 UNKNOWN_VERSION = "0.0.0"
 _UPDATE_CHECK_INTERVAL = 12 * 60 * 60  # 12 hours in seconds
 _UPDATE_CHECK_STAMP = Path.home() / ".agents" / ".acli_update_check"
+_LATEST_VERSION_CACHE = Path.home() / ".agents" / ".acli_latest_version"
 
 
 def _update_check_is_due() -> bool:
@@ -73,6 +74,7 @@ def get_latest_version() -> str:
     try:
         # Lazy import requests to speed up CLI startup time
         import requests
+
         response = requests.get(f"https://pypi.org/pypi/{PACKAGE_NAME}/json", timeout=2)
         if response.status_code == 200:
             return response.json()["info"]["version"]
@@ -98,16 +100,63 @@ def check_for_updates() -> tuple[bool, str, str]:
     return needs_update, current, latest
 
 
-def display_update_message() -> None:
-    """Check for updates and display a message if an update is available."""
-    if not _update_check_is_due():
-        return
+def _spawn_background_update_check() -> None:
+    """Spawn a detached background process to query PyPI for the latest version."""
+    import subprocess
+    import sys
+    from google.agents.cli._runner import popen_resolved_detached
+
+    cache_path = _LATEST_VERSION_CACHE.as_posix()
+
+    python_code = f"""import urllib.request
+import json
+import pathlib
+try:
+    req = urllib.request.Request(
+        'https://pypi.org/pypi/{PACKAGE_NAME}/json',
+        headers={{'User-Agent': 'Mozilla/5.0'}}
+    )
+    with urllib.request.urlopen(req, timeout=5) as response:
+        if response.status == 200:
+            data = json.loads(response.read().decode('utf-8'))
+            latest_version = data['info']['version']
+            cache = pathlib.Path('{cache_path}')
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            cache.write_text(latest_version)
+except Exception:
+    pass
+"""
 
     try:
-        needs_update, current, latest = check_for_updates()
+        # Run the detached background process
+        popen_resolved_detached(
+            [sys.executable, "-c", python_code],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception as e:
+        logging.debug(f"Failed to spawn background update check: {e}")
 
-        # We only record the check if we successfully queried it
-        _record_update_check()
+
+def display_update_message() -> None:
+    """Check for updates and display a message if an update is available."""
+    try:
+        current = get_current_version()
+        try:
+            latest = _LATEST_VERSION_CACHE.read_text().strip()
+        except OSError:
+            latest = UNKNOWN_VERSION
+
+        # Check if an update is available based on cached latest version
+        needs_update = False
+        if latest != UNKNOWN_VERSION and current != UNKNOWN_VERSION:
+            try:
+                # Lazy import packaging.version to speed up CLI startup time
+                from packaging import version as pkg_version
+
+                needs_update = pkg_version.parse(latest) > pkg_version.parse(current)
+            except Exception:
+                pass
 
         if needs_update:
             # Lazy import Console to speed up CLI startup time
@@ -127,5 +176,14 @@ def display_update_message() -> None:
                 highlight=False,
             )
     except Exception as e:
-        # Don't let version checking errors affect the CLI
-        logging.debug(f"Error checking for updates: {e}")
+        # Don't let version displaying errors affect the CLI
+        logging.debug(f"Error displaying update message: {e}")
+
+    # Spawn background update check if the check is due
+    if _update_check_is_due():
+        try:
+            # Immediately record check to prevent duplicate background spawns
+            _record_update_check()
+            _spawn_background_update_check()
+        except Exception as e:
+            logging.debug(f"Error spawning background update check: {e}")

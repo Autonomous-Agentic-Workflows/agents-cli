@@ -21,7 +21,9 @@ from google.agents.cli._runner import run
 
 @click.command("lint")
 @click.option("--fix", is_flag=True, default=False, help="Auto-fix linting issues.")
-@click.option("--mypy", is_flag=True, default=False, help="Also run mypy type checking.")
+@click.option(
+    "--mypy", is_flag=True, default=False, help="Also run mypy type checking."
+)
 @click.option(
     "--skip-codespell",
     is_flag=True,

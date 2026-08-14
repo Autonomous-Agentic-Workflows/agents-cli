@@ -118,7 +118,9 @@ def _resolve_dispatch_target(
     chdir_project_root()
     cfg = read_project_config()
     require_agent_directory(cfg)
-    server = ensure_server(Path.cwd(), cfg.agent_directory, trace_to_cloud=trace_to_cloud)
+    server = ensure_server(
+        Path.cwd(), cfg.agent_directory, trace_to_cloud=trace_to_cloud
+    )
     return _DispatchTarget(
         service_url=f"http://127.0.0.1:{server.port}",
         headers={},
@@ -128,7 +130,9 @@ def _resolve_dispatch_target(
     )
 
 
-def _handle_stop_server(ctx: click.Context, _param: click.Parameter, value: bool) -> None:
+def _handle_stop_server(
+    ctx: click.Context, _param: click.Parameter, value: bool
+) -> None:
     """Eager callback for ``--stop-server``: stop and exit before argument parsing."""
     if not value:
         return

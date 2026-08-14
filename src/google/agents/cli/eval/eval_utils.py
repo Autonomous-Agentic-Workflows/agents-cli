@@ -260,7 +260,9 @@ def prepare_eval_metrics(
     return metrics, local_custom_count, remote_custom_count
 
 
-def print_results_table(result: vertex_types.EvaluationResult, console: Console) -> None:
+def print_results_table(
+    result: vertex_types.EvaluationResult, console: Console
+) -> None:
     """Print the evaluation summary as plain, LLM-friendly key/value text.
 
     Renders one ``metric:`` block per metric with indented ``property: value``

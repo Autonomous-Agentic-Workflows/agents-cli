@@ -51,6 +51,7 @@ def _parse_skill_version(skill_md: Path) -> str | None:
     try:
         # Lazy import yaml to speed up CLI startup time
         import yaml
+
         frontmatter = yaml.safe_load(parts[1])
     except yaml.YAMLError:
         logging.warning(f"Malformed skill file (invalid YAML): {skill_md}")
@@ -82,6 +83,7 @@ def _find_installed_skills() -> dict[str, str]:
 
     try:
         from google.agents.cli._project import find_project_root
+
         project_root = find_project_root()
         if project_root:
             skills_dirs.append(project_root / "skills")

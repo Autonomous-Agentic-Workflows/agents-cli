@@ -126,7 +126,9 @@ def _build_runtime_env_vars(
         )
         del env_vars[reserved]
     if "AGENT_VERSION" not in env_vars:
-        env_vars["AGENT_VERSION"] = get_project_version(find_project_root() or Path.cwd())
+        env_vars["AGENT_VERSION"] = get_project_version(
+            find_project_root() or Path.cwd()
+        )
     if port:
         env_vars.setdefault("PORT", str(port))
     # agent_runtime is Vertex-native: default to Vertex (LLM at global) unless the
@@ -460,8 +462,12 @@ def deploy_agent_runtime(
         matching_agents = [setup_agent_identity(client, project, display_name)]
     if not is_update:
         # Create: no existing spec to preserve; apply the conservative shape.
-        min_instances = DEFAULT_MIN_INSTANCES if min_instances is None else min_instances
-        max_instances = DEFAULT_MAX_INSTANCES if max_instances is None else max_instances
+        min_instances = (
+            DEFAULT_MIN_INSTANCES if min_instances is None else min_instances
+        )
+        max_instances = (
+            DEFAULT_MAX_INSTANCES if max_instances is None else max_instances
+        )
         cpu = DEFAULT_CPU if cpu is None else cpu
         memory = DEFAULT_MEMORY if memory is None else memory
         container_concurrency = (

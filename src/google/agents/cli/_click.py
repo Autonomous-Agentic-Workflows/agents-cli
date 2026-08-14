@@ -62,7 +62,9 @@ class LazyGroup(click.Group):
             self.commands[cmd_name] = cmd
         return super().get_command(ctx, cmd_name)
 
-    def format_commands(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+    def format_commands(
+        self, ctx: click.Context, formatter: click.HelpFormatter
+    ) -> None:
         rows: list[tuple[str, str]] = []
         for name in self.list_commands(ctx):
             if name in self.commands:

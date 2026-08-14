@@ -360,7 +360,9 @@ def setup_terraform_backend(
         if dir_path.exists():
             # Use different state prefixes for single-project and prod
             is_single_project = dir_path.name == "single-project"
-            state_prefix = f"{repository_name}/{(is_single_project and 'dev') or 'prod'}"
+            state_prefix = (
+                f"{repository_name}/{(is_single_project and 'dev') or 'prod'}"
+            )
 
             backend_file = dir_path / "backend.tf"
             backend_content = f'''terraform {{
@@ -701,7 +703,9 @@ def setup_cicd(
                 )
                 console.print("✅ GitHub connection created successfully")
             except Exception as e:
-                console.print(f"❌ Failed to create GitHub connection: {e}", style="red")
+                console.print(
+                    f"❌ Failed to create GitHub connection: {e}", style="red"
+                )
                 raise
 
         else:
@@ -801,7 +805,9 @@ def setup_cicd(
     if dev_project:
         sp_tf_dir = tf_dir.parent / "single-project"
         if sp_tf_dir.exists():
-            console.print(f"\n🏗️ {action_label} single-project Terraform configuration...")
+            console.print(
+                f"\n🏗️ {action_label} single-project Terraform configuration..."
+            )
             run_terraform(
                 tf_dir=sp_tf_dir,
                 apply=apply_changes,

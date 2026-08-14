@@ -118,6 +118,7 @@ def read_project_config(project_dir: str | None = None) -> ProjectConfig:
     if manifest_path.exists():
         # Lazy-import yaml to speed up CLI startup time
         import yaml
+
         # Primary: read from manifest
         with open(manifest_path, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}

@@ -70,7 +70,9 @@ def build_adk_sse_parts(message: str, files: tuple[str, ...] = ()) -> list[dict]
     return parts
 
 
-def build_agent_runtime_message(message: str, files: tuple[str, ...] = ()) -> str | dict:
+def build_agent_runtime_message(
+    message: str, files: tuple[str, ...] = ()
+) -> str | dict:
     """Build a message for Agent Runtime streaming queries.
 
     Returns a plain string for text-only messages or a Content dict

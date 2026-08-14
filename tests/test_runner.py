@@ -63,3 +63,26 @@ def test_redact_cmd_no_secrets():
     # Normal commands
     args = ["git", "commit", "-m", "regular commit message"]
     assert redact_cmd(args) == "git commit -m 'regular commit message'"
+
+
+def test_redact_cmd_case_insensitive_and_extended():
+    # Case-insensitivity for options
+    args_1 = ["python", "-m", "main", "--API-KEY", "AIzaSyKey123"]
+    assert redact_cmd(args_1) == "python -m main --API-KEY '[REDACTED]'"
+
+    args_2 = ["python", "-m", "main", "--Api_Key=AIzaSyKey123"]
+    assert redact_cmd(args_2) == "python -m main '--Api_Key=[REDACTED]'"
+
+    # Extended options (e.g. password, token, secret)
+    args_3 = ["deploy", "--password", "supersecretpwd"]
+    assert redact_cmd(args_3) == "deploy --password '[REDACTED]'"
+
+    args_4 = ["deploy", "--access-token=my-access-token-123"]
+    assert redact_cmd(args_4) == "deploy '--access-token=[REDACTED]'"
+
+    # Case-insensitive env vars (e.g. lowercase)
+    args_5 = ["env", "gemini_api_key=AIzaSyKey123", "python"]
+    assert redact_cmd(args_5) == "env 'gemini_api_key=[REDACTED]' python"
+
+    args_6 = ["env", "db_password=mypassword", "python"]
+    assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"

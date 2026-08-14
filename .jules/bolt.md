@@ -7,3 +7,7 @@
 ## 2026-03-06 - Eager Imports in Global Paths
 **Learning:** Even when a module is imported only to read metadata or perform quick checks, eager imports of heavy libraries (e.g. `requests`, `rich`, `packaging`, `yaml`) inside those modules severely degrade CLI startup time (adding ~130ms+ overhead even on fast-paths where the checks are not due). Moving them to local imports inside specific check functions cuts startup latency in half.
 **Action:** Defensively lazy-import any heavy external libraries in modules that are imported during CLI startup or fast-path checks.
+
+## 2026-03-07 - Non-Blocking Background CLI Update Checking
+**Learning:** Performing a synchronous/blocking network request to PyPI on CLI startup introduces an unnecessary 100ms-2000ms latency penalty. Implementing a local file cache for the latest version and spawning a detached Python subprocess via `popen_resolved_detached` to check PyPI in the background keeps startup times to near 0ms, maintaining a highly responsive developer CLI interface.
+**Action:** Move all expensive, non-essential network synchronization checks to background, detached subprocesses and read locally cached state on startup.

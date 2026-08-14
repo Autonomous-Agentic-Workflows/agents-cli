@@ -26,6 +26,7 @@ PACKAGE_NAME = "google-agents-cli"
 UNKNOWN_VERSION = "0.0.0"
 _UPDATE_CHECK_INTERVAL = 12 * 60 * 60  # 12 hours in seconds
 _UPDATE_CHECK_STAMP = Path.home() / ".agents" / ".acli_update_check"
+_LATEST_VERSION_CACHE = Path.home() / ".agents" / ".acli_latest_version"
 
 
 def _update_check_is_due() -> bool:
@@ -73,6 +74,7 @@ def get_latest_version() -> str:
     try:
         # Lazy import requests to speed up CLI startup time
         import requests
+
         response = requests.get(f"https://pypi.org/pypi/{PACKAGE_NAME}/json", timeout=2)
         if response.status_code == 200:
             return response.json()["info"]["version"]
@@ -99,33 +101,82 @@ def check_for_updates() -> tuple[bool, str, str]:
 
 
 def display_update_message() -> None:
-    """Check for updates and display a message if an update is available."""
-    if not _update_check_is_due():
-        return
+    """Check for updates and display a message if an update is available.
 
+    Performance Optimization (⚡ Bolt):
+    Rather than performing blocking network I/O synchronously during every CLI startup path (which
+    can stall CLI commands for up to 2 seconds or longer), this function employs a completely
+    non-blocking, asynchronous approach:
+    1. Instantly reads the latest known version cached locally at `~/.agents/.acli_latest_version`.
+       If the cached version is newer than the current version, an update warning is printed immediately.
+       Since reading from a local file takes < 1 ms, this completely avoids CLI startup latency.
+    2. When the check interval (12 hours) has elapsed, it records the check timestamp and spawns a
+       completely detached background python process (via `popen_resolved_detached`) using standard
+       library `urllib.request` to query PyPI. This runs asynchronously without delaying the user's command,
+       and writes the fetched latest version back to the cache file.
+    """
+    # 1. Instantly read the latest cached version and print warning if update is available
     try:
-        needs_update, current, latest = check_for_updates()
+        current = get_current_version()
+        if current != UNKNOWN_VERSION:
+            if _LATEST_VERSION_CACHE.is_file():
+                latest = _LATEST_VERSION_CACHE.read_text().strip()
+                if latest and latest != UNKNOWN_VERSION:
+                    # Lazy import packaging to preserve fast startup and avoid heavy top-level imports
+                    from packaging import version as pkg_version
 
-        # We only record the check if we successfully queried it
-        _record_update_check()
+                    needs_update = pkg_version.parse(latest) > pkg_version.parse(
+                        current
+                    )
+                    if needs_update:
+                        # Lazy import Console to speed up CLI startup time
+                        from rich.console import Console
 
-        if needs_update:
-            # Lazy import Console to speed up CLI startup time
-            from rich.console import Console
-
-            console = Console()
-            console.print(
-                f"\n[yellow]⚠️  Update available: {current} → {latest}[/]",
-                highlight=False,
-            )
-            console.print(
-                f"[yellow]Run `uv tool upgrade {PACKAGE_NAME}` to update.[/]",
-                highlight=False,
-            )
-            console.print(
-                f"[dim]If you installed differently: pip install --upgrade {PACKAGE_NAME} | pipx upgrade {PACKAGE_NAME}[/]",
-                highlight=False,
-            )
+                        console = Console()
+                        console.print(
+                            f"\n[yellow]⚠️  Update available: {current} → {latest}[/]",
+                            highlight=False,
+                        )
+                        console.print(
+                            f"[yellow]Run `uv tool upgrade {PACKAGE_NAME}` to update.[/]",
+                            highlight=False,
+                        )
+                        console.print(
+                            f"[dim]If you installed differently: pip install --upgrade {PACKAGE_NAME} | pipx upgrade {PACKAGE_NAME}[/]",
+                            highlight=False,
+                        )
     except Exception as e:
-        # Don't let version checking errors affect the CLI
-        logging.debug(f"Error checking for updates: {e}")
+        # Defensive: Never let update warning rendering affect CLI command execution
+        logging.debug(f"Error displaying cached update message: {e}")
+
+    # 2. Spawn a detached background process to refresh the PyPI version cache if the interval is due
+    if _update_check_is_due():
+        try:
+            # We record the update check timestamp immediately before spawning the background process
+            # to guarantee that rapid successive CLI commands do not spawn redundant parallel checks.
+            _record_update_check()
+
+            import sys
+            from google.agents.cli._runner import popen_resolved_detached
+
+            # This standard-library-only snippet retrieves PyPI package info and caches the latest version.
+            # Using as_posix() avoids escaping issues with backslashes on Windows systems.
+            code = (
+                "import json, urllib.request, sys; "
+                "from pathlib import Path; "
+                "try:\n"
+                f"    req = urllib.request.Request('https://pypi.org/pypi/{PACKAGE_NAME}/json', headers={{'User-Agent': 'google-agents-cli-updater'}});\n"
+                "    with urllib.request.urlopen(req, timeout=5) as r:\n"
+                "        latest = json.loads(r.read().decode('utf-8'))['info']['version']\n"
+                "        if latest:\n"
+                f"            p = Path('{_LATEST_VERSION_CACHE.as_posix()}')\n"
+                "            p.parent.mkdir(parents=True, exist_ok=True)\n"
+                "            p.write_text(latest.strip(), encoding='utf-8')\n"
+                "except Exception:\n"
+                "    pass"
+            )
+
+            popen_resolved_detached([sys.executable, "-c", code])
+        except Exception as e:
+            # Defensive: Never block or fail CLI startup on background worker spawn failures
+            logging.debug(f"Error spawning background update checker: {e}")

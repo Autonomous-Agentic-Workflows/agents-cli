@@ -20,7 +20,6 @@ import platform
 from pathlib import Path
 
 import click
-from rich.console import Console
 
 import google.agents.cli as _cli_pkg
 from google.agents.cli.__init__ import __version__
@@ -33,18 +32,17 @@ from google.agents.cli._project import (
 from google.agents.cli._skills_check import get_installed_skills
 
 _CLI_INSTALL_PATH = str(Path(_cli_pkg.__file__).parent)
-console = Console()
 
 
 def _print_installed_skills(
     skills: list[dict] | None,
 ) -> None:
-    """Print installed skills summary with rich color formatting."""
+    """Print installed skills summary."""
     if skills is None:
-        console.print("Installed skills:   [bold red](could not query)[/bold red]")
+        click.echo("Installed skills:   (could not query)")
         return
     if not skills:
-        console.print("Installed skills:   [bold yellow]none[/bold yellow]")
+        click.echo("Installed skills:   none")
         return
     # Group by scope
     by_scope: dict[str, list[str]] = {}
@@ -52,11 +50,9 @@ def _print_installed_skills(
         scope = s.get("scope", "unknown")
         by_scope.setdefault(scope, []).append(s["name"])
     for scope, names in sorted(by_scope.items()):
-        console.print(
-            f"Installed skills:   [bold green]{len(names)}[/bold green] [dim]({scope})[/dim]"
-        )
+        click.echo(f"Installed skills:   {len(names)} ({scope})")
         for name in sorted(names):
-            console.print(f"  [cyan]•[/cyan] [bold]{name}[/bold]")
+            click.echo(f"  - {name}")
 
 
 @click.command()
@@ -78,16 +74,14 @@ def cmd_info(as_json: bool) -> None:
                 }
             )
         else:
-            console.print(f"CLI version:        [bold green]{__version__}[/bold green]")
-            console.print(f"CLI install path:   [cyan]{_CLI_INSTALL_PATH}[/cyan]")
-            console.print(f"OS info:            [dim]{os_info}[/dim]")
+            click.echo(f"CLI version:        {__version__}")
+            click.echo(f"CLI install path:   {_CLI_INSTALL_PATH}")
+            click.echo(f"OS info:            {os_info}")
             _print_installed_skills(installed_skills)
-            console.print()
-            console.print(
-                "[bold yellow]No agent project found in the current directory or any parent.[/bold yellow]"
-            )
-            console.print("  Run this command from within a project, or create one:")
-            console.print("    [bold cyan]agents-cli create my-agent[/bold cyan]")
+            click.echo()
+            click.echo("No agent project found in the current directory or any parent.")
+            click.echo("  Run this command from within a project, or create one:")
+            click.echo("    agents-cli create my-agent")
         return
 
     cfg = read_project_config(str(project_root))
@@ -110,17 +104,15 @@ def cmd_info(as_json: bool) -> None:
         emit(info)
         return
 
-    console.print(f"CLI version:        [bold green]{__version__}[/bold green]")
-    console.print(f"CLI install path:   [cyan]{_CLI_INSTALL_PATH}[/cyan]")
-    console.print(f"OS info:            [dim]{os_info}[/dim]")
+    click.echo(f"CLI version:        {__version__}")
+    click.echo(f"CLI install path:   {_CLI_INSTALL_PATH}")
+    click.echo(f"OS info:            {os_info}")
     _print_installed_skills(installed_skills)
-    console.print()
-    console.print(f"Project root:       [cyan]{project_root}[/cyan]")
-    console.print(
-        f"Project name:       [bold green]{cfg.project_name or '(not set)'}[/bold green]"
-    )
-    console.print(f"Deployment target:  [bold cyan]{cfg.deployment_target}[/bold cyan]")
-    console.print(f"Agent directory:    [cyan]{cfg.agent_directory}[/cyan]")
-    console.print(f"Region:             [cyan]{cfg.region}[/cyan]")
+    click.echo()
+    click.echo(f"Project root:       {project_root}")
+    click.echo(f"Project name:       {cfg.project_name or '(not set)'}")
+    click.echo(f"Deployment target:  {cfg.deployment_target}")
+    click.echo(f"Agent directory:    {cfg.agent_directory}")
+    click.echo(f"Region:             {cfg.region}")
     if cfg.is_a2a:
-        console.print("A2A:                [bold green]yes[/bold green]")
+        click.echo("A2A:                yes")

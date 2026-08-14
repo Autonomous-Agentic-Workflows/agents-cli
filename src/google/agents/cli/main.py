@@ -93,8 +93,8 @@ def main():
       agents-cli deploy                Deploy the agent
     """
     # Disable gcloud interactive prompts for all CLI subprocesses
-    # unless the user explicitly passes --interactive / -i.
-    if "--interactive" not in sys.argv and "-i" not in sys.argv:
+    # unless the user explicitly passes --interactive / -i or is running login.
+    if "--interactive" not in sys.argv and "-i" not in sys.argv and "login" not in sys.argv:
         os.environ["CLOUDSDK_CORE_DISABLE_PROMPTS"] = "1"
 
     from google.agents.cli._skills_check import check_skills_version

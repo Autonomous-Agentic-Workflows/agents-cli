@@ -27,8 +27,8 @@ from google.agents.cli.auth import (
     "--interactive",
     "-i",
     is_flag=True,
-    default=False,
-    help="Enable interactive authentication (required for login).",
+    default=True,
+    help="Enable interactive authentication (always enabled by default).",
 )
 @click.option(
     "--status",
@@ -37,7 +37,7 @@ from google.agents.cli.auth import (
     help="Show authentication status.",
 )
 def cmd_login(interactive: bool, status: bool):
-    """Authenticate with Google Cloud or AI Studio. Requires --interactive (-i)."""
+    """Authenticate with Google Cloud or AI Studio."""
     if status:
         click.echo()
         click.secho("Status", fg="cyan", bold=True)
@@ -50,14 +50,10 @@ def cmd_login(interactive: bool, status: bool):
             click.secho(f"  Authenticated as {display}", fg="green")
         else:
             click.secho("  Not authenticated", fg="yellow")
-            click.echo("    Run 'agents-cli login -i' to authenticate.")
+            click.echo("    Run 'agents-cli login' to authenticate.")
         click.echo()
         return
 
-    if not interactive:
-        raise click.UsageError(
-            "'login' requires interactive mode. Pass -i / --interactive to authenticate."
-        )
     click.echo()
     click.secho("Authentication", fg="cyan", bold=True)
     click.echo()

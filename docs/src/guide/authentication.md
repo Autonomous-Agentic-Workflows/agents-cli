@@ -47,7 +47,7 @@ No Google Cloud project required.
 Required for Vertex AI models, enterprise features, and deployment.
 
 ```bash
-agents-cli login -i
+agents-cli login
 # or directly: gcloud auth application-default login
 ```
 

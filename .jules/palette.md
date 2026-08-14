@@ -1,0 +1,3 @@
+## 2026-03-31 - [Color-coded Terminal output for CLI agents]
+**Learning:** In interactive CLI sessions (such as `agents-cli run`), standard tag prefixes and system/tool event notifications benefit immensely from clear, consistent color coding. Uncolored output merges the agent responses, user inputs, and nested technical events (like `tool_call` or `tool_response`) into a monotonous block of text, making it difficult for developers to quickly trace multi-turn interactions.
+**Action:** Always color-code prominent CLI role and event tags: green for the agent/author, yellow for user prompts, cyan for referenced files, bold blue for tool calls, and magenta for tool responses.

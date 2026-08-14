@@ -1,0 +1,13 @@
+steps:
+  - name: 'ghcr.io/astral-sh/uv:latest'
+    args:
+      - 'run'
+      - '--project'
+      - 'docs'
+      - 'python'
+      - '-m'
+      - 'pytest'
+      - 'tests/'
+    env:
+      - 'PYTHONPATH=src'
+      - 'PYTHONDONTWRITEBYTECODE=1'

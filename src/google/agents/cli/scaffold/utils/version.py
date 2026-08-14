@@ -26,6 +26,7 @@ PACKAGE_NAME = "google-agents-cli"
 UNKNOWN_VERSION = "0.0.0"
 _UPDATE_CHECK_INTERVAL = 12 * 60 * 60  # 12 hours in seconds
 _UPDATE_CHECK_STAMP = Path.home() / ".agents" / ".acli_update_check"
+_LATEST_VERSION_CACHE = Path.home() / ".agents" / ".acli_latest_version"
 
 
 def _update_check_is_due() -> bool:
@@ -41,7 +42,7 @@ def _record_update_check() -> None:
     """Write the current timestamp to the stamp file."""
     try:
         _UPDATE_CHECK_STAMP.parent.mkdir(parents=True, exist_ok=True)
-        _UPDATE_CHECK_STAMP.write_text(str(time.time()))
+        _UPDATE_CHECK_STAMP.write_text(str(time.time()), encoding="utf-8")
     except OSError:
         pass
 
@@ -75,7 +76,13 @@ def get_latest_version() -> str:
         import requests
         response = requests.get(f"https://pypi.org/pypi/{PACKAGE_NAME}/json", timeout=2)
         if response.status_code == 200:
-            return response.json()["info"]["version"]
+            latest = response.json()["info"]["version"]
+            try:
+                _LATEST_VERSION_CACHE.parent.mkdir(parents=True, exist_ok=True)
+                _LATEST_VERSION_CACHE.write_text(latest, encoding="utf-8")
+            except OSError:
+                pass
+            return latest
         return UNKNOWN_VERSION
     except Exception:
         return UNKNOWN_VERSION  # PyPI couldn't be reached
@@ -100,32 +107,78 @@ def check_for_updates() -> tuple[bool, str, str]:
 
 def display_update_message() -> None:
     """Check for updates and display a message if an update is available."""
-    if not _update_check_is_due():
-        return
-
+    # 1. Read cached latest version and compare with current
+    current = get_current_version()
     try:
-        needs_update, current, latest = check_for_updates()
+        latest = _LATEST_VERSION_CACHE.read_text(encoding="utf-8").strip()
+    except OSError:
+        latest = UNKNOWN_VERSION
 
-        # We only record the check if we successfully queried it
-        _record_update_check()
+    # 2. If we have a valid latest version, compare and display message
+    if latest != UNKNOWN_VERSION:
+        try:
+            from packaging import version as pkg_version
+            needs_update = pkg_version.parse(latest) > pkg_version.parse(current)
+            if needs_update:
+                # Lazy import Console to speed up CLI startup time
+                from rich.console import Console
 
-        if needs_update:
-            # Lazy import Console to speed up CLI startup time
-            from rich.console import Console
+                console = Console()
+                console.print(
+                    f"\n[yellow]⚠️  Update available: {current} → {latest}[/]",
+                    highlight=False,
+                )
+                console.print(
+                    f"[yellow]Run `uv tool upgrade {PACKAGE_NAME}` to update.[/]",
+                    highlight=False,
+                )
+                console.print(
+                    f"[dim]If you installed differently: pip install --upgrade {PACKAGE_NAME} | pipx upgrade {PACKAGE_NAME}[/]",
+                    highlight=False,
+                )
+        except Exception as e:
+            logging.debug(f"Error parsing/comparing version: {e}")
 
-            console = Console()
-            console.print(
-                f"\n[yellow]⚠️  Update available: {current} → {latest}[/]",
-                highlight=False,
+    # 3. If update check is due, trigger background check
+    if _update_check_is_due():
+        try:
+            # First, record the update check time immediately to prevent multiple spawns
+            _record_update_check()
+
+            # Now spawn the background check
+            import sys
+            from google.agents.cli._runner import popen_resolved_detached
+
+            # This inline Python command is run as a detached process.
+            # It queries the PyPI endpoint using only the standard library's urllib,
+            # parses the returned JSON, and writes the latest version to the cache file.
+            # It also updates the check timestamp upon success.
+            code = (
+                "import urllib.request, json, sys, time; "
+                "from pathlib import Path; "
+                "cache_file = Path(sys.argv[1]); "
+                "stamp_file = Path(sys.argv[2]); "
+                "url = f'https://pypi.org/pypi/{sys.argv[3]}/json'; "
+                "try: "
+                "    req = urllib.request.Request(url, headers={'User-Agent': 'google-agents-cli-update-check'}); "
+                "    with urllib.request.urlopen(req, timeout=5) as r: "
+                "        if r.status == 200: "
+                "            latest = json.loads(r.read().decode('utf-8'))['info']['version']; "
+                "            cache_file.parent.mkdir(parents=True, exist_ok=True); "
+                "            cache_file.write_text(latest, encoding='utf-8'); "
+                "            stamp_file.parent.mkdir(parents=True, exist_ok=True); "
+                "            stamp_file.write_text(str(time.time()), encoding='utf-8'); "
+                "except Exception: "
+                "    pass"
             )
-            console.print(
-                f"[yellow]Run `uv tool upgrade {PACKAGE_NAME}` to update.[/]",
-                highlight=False,
-            )
-            console.print(
-                f"[dim]If you installed differently: pip install --upgrade {PACKAGE_NAME} | pipx upgrade {PACKAGE_NAME}[/]",
-                highlight=False,
-            )
-    except Exception as e:
-        # Don't let version checking errors affect the CLI
-        logging.debug(f"Error checking for updates: {e}")
+            args = [
+                sys.executable,
+                "-c",
+                code,
+                str(_LATEST_VERSION_CACHE),
+                str(_UPDATE_CHECK_STAMP),
+                PACKAGE_NAME,
+            ]
+            popen_resolved_detached(args, resolve_executable=False)
+        except Exception as e:
+            logging.debug(f"Error starting background update check: {e}")

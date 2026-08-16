@@ -149,9 +149,13 @@ def display_update_message() -> None:
 
         # Check if an update is available based on cached latest version
         needs_update = False
-        if latest != UNKNOWN_VERSION and current != UNKNOWN_VERSION:
+        if (
+            latest != UNKNOWN_VERSION
+            and current != UNKNOWN_VERSION
+            and latest != current
+        ):
             try:
-                # Lazy import packaging.version to speed up CLI startup time
+                # Lazy import packaging.version only when versions differ to avoid ~25ms startup overhead
                 from packaging import version as pkg_version
 
                 needs_update = pkg_version.parse(latest) > pkg_version.parse(current)

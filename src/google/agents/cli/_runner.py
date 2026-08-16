@@ -49,6 +49,16 @@ def redact_cmd(args: list[str]) -> str:
         "--secret",
         "--client-secret",
         "--client_secret",
+        "--id-token",
+        "--id_token",
+        "--bearer-token",
+        "--bearer_token",
+        "--private-key",
+        "--private_key",
+        "--service-account-key",
+        "--service_account_key",
+        "--credential",
+        "--credentials",
     )
     sensitive_prefixes = tuple(opt + "=" for opt in sensitive_options)
 
@@ -62,10 +72,15 @@ def redact_cmd(args: list[str]) -> str:
         "ACCESS_TOKEN",
         "AUTH_TOKEN",
         "ID_TOKEN",
+        "BEARER_TOKEN",
         "SECRET_KEY",
         "DB_PASSWORD",
         "DB_PASS",
         "PASSWORD",
+        "PRIVATE_KEY",
+        "SERVICE_ACCOUNT_KEY",
+        "CREDENTIALS",
+        "CREDENTIAL",
     ]
 
     for i, raw_arg in enumerate(args):

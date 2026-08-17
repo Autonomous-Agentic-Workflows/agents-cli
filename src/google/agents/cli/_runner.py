@@ -26,67 +26,69 @@ import click
 from google.agents.cli import _tools
 
 
+# Precalculated sets and tuples at module level for O(1) lookups in redact_cmd
+_SENSITIVE_OPTIONS = {
+    "--github-pat",
+    "--github_pat",
+    "--github-token",
+    "--github_token",
+    "--api-key",
+    "--api_key",
+    "--apikey",
+    "--access-token",
+    "--access_token",
+    "--auth-token",
+    "--auth_token",
+    "--token",
+    "--password",
+    "--secret",
+    "--client-secret",
+    "--client_secret",
+}
+_SENSITIVE_PREFIXES = tuple(opt + "=" for opt in _SENSITIVE_OPTIONS)
+
+_SENSITIVE_ENV_VARS = (
+    "GITHUB_PAT",
+    "GH_TOKEN",
+    "GITHUB_TOKEN",
+    "GITHUB_APP_KEY",
+    "GEMINI_API_KEY",
+    "GOOGLE_API_KEY",
+    "ACCESS_TOKEN",
+    "AUTH_TOKEN",
+    "ID_TOKEN",
+    "SECRET_KEY",
+    "DB_PASSWORD",
+    "DB_PASS",
+    "PASSWORD",
+)
+
+
 def redact_cmd(args: list[str]) -> str:
     """Mask sensitive information in command arguments and return joined string.
 
     Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
-    sensitive_options = (
-        "--github-pat",
-        "--github_pat",
-        "--github-token",
-        "--github_token",
-        "--api-key",
-        "--api_key",
-        "--apikey",
-        "--access-token",
-        "--access_token",
-        "--auth-token",
-        "--auth_token",
-        "--token",
-        "--password",
-        "--secret",
-        "--client-secret",
-        "--client_secret",
-    )
-    sensitive_prefixes = tuple(opt + "=" for opt in sensitive_options)
-
-    sensitive_env_vars = [
-        "GITHUB_PAT",
-        "GH_TOKEN",
-        "GITHUB_TOKEN",
-        "GITHUB_APP_KEY",
-        "GEMINI_API_KEY",
-        "GOOGLE_API_KEY",
-        "ACCESS_TOKEN",
-        "AUTH_TOKEN",
-        "ID_TOKEN",
-        "SECRET_KEY",
-        "DB_PASSWORD",
-        "DB_PASS",
-        "PASSWORD",
-    ]
 
     for i, raw_arg in enumerate(args):
         arg = str(raw_arg)
         arg_lower = arg.lower()
-        if arg_lower in sensitive_options and i + 1 < len(args):
+        if arg_lower in _SENSITIVE_OPTIONS and i + 1 < len(args):
             redacted_cmd_list[i + 1] = "[REDACTED]"
-        elif arg_lower.startswith(sensitive_prefixes):
-            opt_name, value = arg.split("=", 1)
+        elif arg_lower.startswith(_SENSITIVE_PREFIXES):
+            opt_name, _ = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
-        elif any(secret in arg.upper() for secret in sensitive_env_vars):
+        elif any(secret in arg.upper() for secret in _SENSITIVE_ENV_VARS):
             if "=" in arg:
-                key, sep, val = arg.partition("=")
-                if any(secret in key.upper() for secret in sensitive_env_vars):
+                key, _, _ = arg.partition("=")
+                if any(secret in key.upper() for secret in _SENSITIVE_ENV_VARS):
                     redacted_cmd_list[i] = f"{key}=[REDACTED]"
                 else:
                     redacted_cmd_list[i] = "[REDACTED]"
             else:
                 redacted_cmd_list[i] = "[REDACTED]"
 
-    # Make sure we convert everything to string for shlex.join
     return shlex.join(str(a) for a in redacted_cmd_list)
 
 

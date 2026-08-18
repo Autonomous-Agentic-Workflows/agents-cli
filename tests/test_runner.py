@@ -86,3 +86,31 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_additional_credentials():
+    # Additional options: id-token, bearer-token, private-key, service-account-key, credential
+    args_1 = ["deploy", "--id-token", "eyJhbGciOiJSUzI1NiIs..."]
+    assert redact_cmd(args_1) == "deploy --id-token '[REDACTED]'"
+
+    args_2 = ["deploy", "--bearer_token=secret_bearer_val"]
+    assert redact_cmd(args_2) == "deploy '--bearer_token=[REDACTED]'"
+
+    args_3 = ["deploy", "--private-key", "-----BEGIN PRIVATE KEY-----"]
+    assert redact_cmd(args_3) == "deploy --private-key '[REDACTED]'"
+
+    args_4 = ["deploy", "--service-account-key=key.json"]
+    assert redact_cmd(args_4) == "deploy '--service-account-key=[REDACTED]'"
+
+    args_5 = ["deploy", "--credentials", "creds.json"]
+    assert redact_cmd(args_5) == "deploy --credentials '[REDACTED]'"
+
+    # Additional env vars: BEARER_TOKEN, PRIVATE_KEY, SERVICE_ACCOUNT_KEY, CREDENTIALS
+    args_6 = ["env", "BEARER_TOKEN=bearer123", "python"]
+    assert redact_cmd(args_6) == "env 'BEARER_TOKEN=[REDACTED]' python"
+
+    args_7 = ["env", "PRIVATE_KEY=pemdata", "python"]
+    assert redact_cmd(args_7) == "env 'PRIVATE_KEY=[REDACTED]' python"
+
+    args_8 = ["env", "CREDENTIALS=sa_credentials.json", "python"]
+    assert redact_cmd(args_8) == "env 'CREDENTIALS=[REDACTED]' python"

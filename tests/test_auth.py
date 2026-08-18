@@ -74,3 +74,20 @@ def test_login_status_not_authenticated():
         assert "Not authenticated" in result.output
         # Verify it suggests 'agents-cli login' instead of 'agents-cli login -i'
         assert "Run 'agents-cli login' to authenticate." in result.output
+
+
+def test_run_auth_step_menu_formatting():
+    """Verify that run_auth_step renders the formatted authentication menu with bullets."""
+    from google.agents.cli.auth import run_auth_step
+
+    with (
+        patch("google.agents.cli.auth.is_authenticated", return_value=(False, None)),
+        patch("click.prompt", return_value=3),
+    ):
+        with patch("click.echo") as mock_echo:
+            assert run_auth_step(show_header=True) is True
+            # Confirm menu prompt texts were output
+            printed_texts = [
+                call.args[0] if call.args else "" for call in mock_echo.call_args_list
+            ]
+            assert "  Choose an authentication method:" in printed_texts

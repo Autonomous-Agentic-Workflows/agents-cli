@@ -44,11 +44,21 @@ def redact_cmd(args: list[str]) -> str:
         "--access_token",
         "--auth-token",
         "--auth_token",
+        "--bearer-token",
+        "--bearer_token",
+        "--private-key",
+        "--private_key",
+        "--service-account-key",
+        "--service_account_key",
         "--token",
         "--password",
+        "--pass",
+        "--pat",
         "--secret",
         "--client-secret",
         "--client_secret",
+        "--credential",
+        "--credentials",
     )
     sensitive_prefixes = tuple(opt + "=" for opt in sensitive_options)
 
@@ -61,11 +71,17 @@ def redact_cmd(args: list[str]) -> str:
         "GOOGLE_API_KEY",
         "ACCESS_TOKEN",
         "AUTH_TOKEN",
+        "BEARER_TOKEN",
         "ID_TOKEN",
         "SECRET_KEY",
         "DB_PASSWORD",
         "DB_PASS",
         "PASSWORD",
+        "PRIVATE_KEY",
+        "SERVICE_ACCOUNT_KEY",
+        "PAT",
+        "CREDENTIAL",
+        "CREDENTIALS",
     ]
 
     for i, raw_arg in enumerate(args):

@@ -22,8 +22,6 @@ the exact same URL, so the format lives here in one place.
 
 from __future__ import annotations
 
-from a2a.utils.constants import AGENT_CARD_WELL_KNOWN_PATH
-
 
 def build_agent_runtime_a2a_base_url(
     location: str, runtime_resource: str, agent_directory: str
@@ -40,5 +38,8 @@ def build_agent_runtime_a2a_card_url(
     location: str, runtime_resource: str, agent_directory: str
 ) -> str:
     """Well-known agent-card URL — what ``deploy`` advertises and ``publish`` registers."""
+    # Lazy import to avoid loading heavy `a2a` dependencies (~400ms) during CLI startup/module import
+    from a2a.utils.constants import AGENT_CARD_WELL_KNOWN_PATH
+
     base = build_agent_runtime_a2a_base_url(location, runtime_resource, agent_directory)
     return f"{base}{AGENT_CARD_WELL_KNOWN_PATH}"

@@ -84,7 +84,7 @@ def _check_legacy_skills():
 
         # Run raw command to get all skills without filtering
         result = run(
-            ["npx", "-y", "skills", "list", "--json"],
+            ["npx", "-y", SKILLS_NPX_PACKAGE, "list", "--json"],
             capture=True,
             check=False,
             timeout=15,

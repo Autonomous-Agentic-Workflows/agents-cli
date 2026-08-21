@@ -84,10 +84,10 @@ def cmd_info(as_json: bool) -> None:
             _print_installed_skills(installed_skills)
             console.print()
             console.print(
-                "[bold yellow]No agent project found in the current directory or any parent.[/bold yellow]"
+                "ℹ  [bold yellow]No agent project found in current or parent directory.[/bold yellow]"
             )
-            console.print("  Run this command from within a project, or create one:")
-            console.print("    [bold cyan]agents-cli create my-agent[/bold cyan]")
+            console.print("   Run from within an existing project, or create a new one:")
+            console.print("     [bold cyan]agents-cli create my-agent[/bold cyan]")
         return
 
     cfg = read_project_config(str(project_root))

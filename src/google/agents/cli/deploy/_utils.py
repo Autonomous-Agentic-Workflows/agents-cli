@@ -85,6 +85,19 @@ def parse_key_value_pairs(kv_string: str | None) -> dict[str, str]:
     return result
 
 
+def parse_secrets(secrets_string: str | None) -> dict[str, dict[str, str]]:
+    """Parse secrets from ENV_VAR=SECRET_ID or ENV_VAR=SECRET_ID:VERSION format."""
+    raw = parse_key_value_pairs(secrets_string)
+    result: dict[str, dict[str, str]] = {}
+    for key, spec in raw.items():
+        if ":" not in spec:
+            secret_id, version = spec, "latest"
+        else:
+            secret_id, _, version = spec.rpartition(":")
+        result[key] = {"secret": secret_id, "version": version}
+    return result
+
+
 def read_project_dotenv(project_root: str | Path) -> dict[str, str]:
     """Read the project-root ``.env`` into a dict, or ``{}`` when absent.
 

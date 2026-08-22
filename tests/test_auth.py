@@ -25,7 +25,7 @@ def test_login_interactive_by_default():
     with patch("google.agents.cli.setup.cmd_auth.run_auth_step") as mock_run_auth_step:
         result = runner.invoke(cmd_login)
         assert result.exit_code == 0
-        mock_run_auth_step.assert_called_once()
+        mock_run_auth_step.assert_called_once_with(show_header=False)
         assert "Authentication" in result.output
 
 
@@ -35,8 +35,20 @@ def test_login_interactive_explicit():
     with patch("google.agents.cli.setup.cmd_auth.run_auth_step") as mock_run_auth_step:
         result = runner.invoke(cmd_login, ["-i"])
         assert result.exit_code == 0
-        mock_run_auth_step.assert_called_once()
+        mock_run_auth_step.assert_called_once_with(show_header=False)
         assert "Authentication" in result.output
+
+
+def test_login_header_not_duplicated():
+    """Verify that 'Authentication' header is printed exactly once during login."""
+    runner = CliRunner()
+    with (
+        patch("google.agents.cli.auth.is_authenticated", return_value=(False, None)),
+        patch("click.prompt", return_value=3),
+    ):
+        result = runner.invoke(cmd_login)
+        assert result.exit_code == 0
+        assert result.output.count("Authentication") == 1
 
 
 def test_login_no_interactive_raises_usage_error():

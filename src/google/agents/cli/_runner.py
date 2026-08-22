@@ -39,6 +39,15 @@ _SENSITIVE_OPTIONS = {
     "--access_token",
     "--auth-token",
     "--auth_token",
+    "--bearer-token",
+    "--bearer_token",
+    "--private-key",
+    "--private_key",
+    "--service-account-key",
+    "--service_account_key",
+    "--pat",
+    "--credential",
+    "--credentials",
     "--token",
     "--password",
     "--secret",
@@ -61,6 +70,15 @@ _SENSITIVE_ENV_VARS = (
     "DB_PASSWORD",
     "DB_PASS",
     "PASSWORD",
+    "API_KEY",
+    "BEARER_TOKEN",
+    "PRIVATE_KEY",
+    "SERVICE_ACCOUNT_KEY",
+    "CLIENT_SECRET",
+    "SECRET",
+    "PAT",
+    "PASS",
+    "CREDENTIAL",
 )
 
 
@@ -80,7 +98,24 @@ def redact_cmd(args: list[str]) -> str:
             opt_name, value = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
         elif any(secret in arg.upper() for secret in _SENSITIVE_ENV_VARS):
-            if "=" in arg:
+            if "," in arg and "=" in arg:
+                segments = []
+                for seg in arg.split(","):
+                    if "=" in seg:
+                        k, sep, v = seg.partition("=")
+                        if any(secret in k.upper() for secret in _SENSITIVE_ENV_VARS):
+                            segments.append(f"{k}=[REDACTED]")
+                        elif any(secret in v.upper() for secret in _SENSITIVE_ENV_VARS):
+                            segments.append("[REDACTED]")
+                        else:
+                            segments.append(seg)
+                    else:
+                        if any(secret in seg.upper() for secret in _SENSITIVE_ENV_VARS):
+                            segments.append("[REDACTED]")
+                        else:
+                            segments.append(seg)
+                redacted_cmd_list[i] = ",".join(segments)
+            elif "=" in arg:
                 key, sep, val = arg.partition("=")
                 if any(secret in key.upper() for secret in _SENSITIVE_ENV_VARS):
                     redacted_cmd_list[i] = f"{key}=[REDACTED]"

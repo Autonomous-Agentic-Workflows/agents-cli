@@ -39,6 +39,10 @@ _SENSITIVE_OPTIONS = {
     "--access_token",
     "--auth-token",
     "--auth_token",
+    "--authorization",
+    "--auth",
+    "--bearer-token",
+    "--bearer_token",
     "--token",
     "--password",
     "--secret",
@@ -72,6 +76,8 @@ def redact_cmd(args: list[str]) -> str:
     redacted_cmd_list = list(args)
 
     for i, raw_arg in enumerate(args):
+        if redacted_cmd_list[i] == "[REDACTED]":
+            continue
         arg = str(raw_arg)
         arg_lower = arg.lower()
         if arg_lower in _SENSITIVE_OPTIONS and i + 1 < len(args):
@@ -79,6 +85,14 @@ def redact_cmd(args: list[str]) -> str:
         elif arg_lower.startswith(_SENSITIVE_PREFIXES):
             opt_name, value = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
+        elif arg_lower.startswith("bearer "):
+            redacted_cmd_list[i] = "Bearer [REDACTED]"
+        elif ":" in arg and any(
+            h_tag in arg_lower
+            for h_tag in ("authorization:", "x-api-key:", "api-key:", "x-auth-token:", "auth-token:")
+        ):
+            prefix, _ = arg.split(":", 1)
+            redacted_cmd_list[i] = f"{prefix}: [REDACTED]"
         elif any(secret in arg.upper() for secret in _SENSITIVE_ENV_VARS):
             if "=" in arg:
                 key, sep, val = arg.partition("=")

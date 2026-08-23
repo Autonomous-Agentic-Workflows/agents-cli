@@ -65,6 +65,18 @@ def test_redact_cmd_no_secrets():
     assert redact_cmd(args) == "git commit -m 'regular commit message'"
 
 
+def test_redact_cmd_headers_and_authorization():
+    # Bearer tokens and Authorization headers
+    args_1 = ["curl", "-H", "Authorization: Bearer secret_token_123", "https://example.com"]
+    assert redact_cmd(args_1) == "curl -H 'Authorization: [REDACTED]' https://example.com"
+
+    args_2 = ["curl", "--header", "X-Api-Key: secret_key_abc", "https://example.com"]
+    assert redact_cmd(args_2) == "curl --header 'X-Api-Key: [REDACTED]' https://example.com"
+
+    args_3 = ["python", "-m", "app", "--authorization", "Bearer my_secret_token"]
+    assert redact_cmd(args_3) == "python -m app --authorization '[REDACTED]'"
+
+
 def test_redact_cmd_case_insensitive_and_extended():
     # Case-insensitivity for options
     args_1 = ["python", "-m", "main", "--API-KEY", "AIzaSyKey123"]

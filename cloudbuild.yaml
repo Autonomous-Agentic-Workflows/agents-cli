@@ -1,0 +1,7 @@
+steps:
+  - name: 'ghcr.io/astral-sh/uv:python3.12-bookworm'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        PYTHONPATH=src uv run --project docs python -m pytest tests/

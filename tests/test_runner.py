@@ -86,3 +86,26 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_bearer_and_http_headers():
+    # Bearer token flags and options
+    args_1 = ["curl", "-H", "Authorization: Bearer token123", "https://api.example.com"]
+    assert redact_cmd(args_1) == "curl -H 'Authorization: [REDACTED]' https://api.example.com"
+
+    args_2 = ["curl", "-H", "X-Api-Key: secretkey123", "https://api.example.com"]
+    assert redact_cmd(args_2) == "curl -H 'X-Api-Key: [REDACTED]' https://api.example.com"
+
+    args_3 = ["auth", "Bearer eyJhbGciOi..."]
+    assert redact_cmd(args_3) == "auth 'Bearer [REDACTED]'"
+
+    args_4 = ["deploy", "--bearer-token", "secrettoken", "--private-key=pk_123"]
+    assert redact_cmd(args_4) == "deploy --bearer-token '[REDACTED]' '--private-key=[REDACTED]'"
+
+
+def test_redact_cmd_new_sensitive_env_vars():
+    args_1 = ["env", "BEARER_TOKEN=token123", "PRIVATE_KEY=pk_456", "python"]
+    assert redact_cmd(args_1) == "env 'BEARER_TOKEN=[REDACTED]' 'PRIVATE_KEY=[REDACTED]' python"
+
+    args_2 = ["env", "APP_SECRET=appsec_789", "CREDENTIALS=cred_101", "python"]
+    assert redact_cmd(args_2) == "env 'APP_SECRET=[REDACTED]' 'CREDENTIALS=[REDACTED]' python"

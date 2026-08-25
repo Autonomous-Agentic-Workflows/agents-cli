@@ -14,9 +14,16 @@
 
 """Agents CLI — Agent Development Lifecycle toolchain."""
 
-import importlib.metadata
+# Defer loading importlib.metadata and package version resolution until requested via PEP 562
+# to avoid ~80-90ms import latency on CLI startup.
+def __getattr__(name: str) -> str:
+    if name == "__version__":
+        import importlib.metadata
 
-try:
-    __version__ = importlib.metadata.version("google-agents-cli")
-except importlib.metadata.PackageNotFoundError:
-    __version__ = "0.0.0-dev"
+        try:
+            val = importlib.metadata.version("google-agents-cli")
+        except importlib.metadata.PackageNotFoundError:
+            val = "0.0.0-dev"
+        globals()["__version__"] = val
+        return val
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

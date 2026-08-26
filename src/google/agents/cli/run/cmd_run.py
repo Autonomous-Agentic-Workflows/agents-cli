@@ -493,10 +493,8 @@ def _print_session_id(session_id: str | None) -> None:
         return
     click.echo()
     click.secho(f"Session: {session_id}", dim=True)
-    click.secho(
-        f'  Resume with: agents-cli run "<message>" --session-id {session_id}',
-        dim=True,
-    )
+    click.secho("  Resume with: ", dim=True, nl=False)
+    click.secho(f'agents-cli run "<message>" --session-id {session_id}', fg="cyan")
 
 
 def _print_artifacts(paths: list[str]) -> None:

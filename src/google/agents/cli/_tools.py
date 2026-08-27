@@ -170,11 +170,11 @@ def run_npx_skills(args: list[str], spinner_msg: str) -> list[str]:
         click.ClickException: If the npx process exits non-zero, or if any
             per-skill failures were observed in the streamed output.
     """
-    from google.agents.cli._runner import popen_resolved
+    from google.agents.cli._runner import popen_resolved, redact_cmd
     from google.agents.cli._skills_check import SKILLS_NPX_PACKAGE
 
     full_args = ["npx", "-y", SKILLS_NPX_PACKAGE, *args]
-    click.secho(f"  \u25b8 {shlex.join(full_args)}", fg="cyan", dim=True)
+    click.secho(f"  \u25b8 {redact_cmd(full_args)}", fg="cyan", dim=True)
 
     # Disable color in the child process. We re-emit each captured line via
     # click.echo, so any ANSI sequences from the child would either render as

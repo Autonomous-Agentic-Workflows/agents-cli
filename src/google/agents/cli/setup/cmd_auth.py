@@ -47,10 +47,10 @@ def cmd_login(interactive: bool, status: bool):
         click.echo()
         authed, display = is_authenticated()
         if authed:
-            click.secho(f"  Authenticated as {display}", fg="green")
+            click.secho(f"  Authenticated as {display}", fg="green", bold=True)
         else:
-            click.secho("  Not authenticated", fg="yellow")
-            click.echo("    Run 'agents-cli login' to authenticate.")
+            click.secho("  Not authenticated", fg="yellow", bold=True)
+            click.secho("    Run 'agents-cli login' to authenticate.", dim=True)
         click.echo()
         return
 

@@ -1,8 +1,9 @@
 """agents-cli agy command — Google Antigravity SDK integration."""
 
-import subprocess
-import os
 import json
+import os
+import shlex
+import subprocess
 import urllib.request
 
 import click
@@ -69,9 +70,11 @@ def bridge():
             env["GOOGLE_APPLICATION_CREDENTIALS"] = adc
             break
 
-    # Source Vertex env script if it exists
+    # Source Vertex env script if it exists (safely quoted against command injection)
     if os.path.exists(VERTEX_ENV):
-        subprocess.run(f"source {VERTEX_ENV}", shell=True, executable="/bin/bash")
+        subprocess.run(
+            f"source {shlex.quote(VERTEX_ENV)}", shell=True, executable="/bin/bash"
+        )
 
     click.echo("Launching AGY bridge with gemini-2.5-flash...")
     click.echo(f"  Venv:    {AGY_VENV}")

@@ -23,7 +23,6 @@ import click
 from rich.console import Console
 
 import google.agents.cli as _cli_pkg
-from google.agents.cli.__init__ import __version__
 from google.agents.cli._output import emit
 from google.agents.cli._project import (
     check_cli_version,
@@ -63,6 +62,8 @@ def _print_installed_skills(
 @click.option("--json", "as_json", is_flag=True, default=False, help="Output as JSON.")
 def cmd_info(as_json: bool) -> None:
     """Show project configuration, paths, and CLI version."""
+    from google.agents.cli import __version__
+
     installed_skills = get_installed_skills()
     project_root = find_project_root()
     os_info = platform.platform()

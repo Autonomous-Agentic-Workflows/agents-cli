@@ -90,6 +90,6 @@ def _print_banner(url: str, cmd_args: list[str]) -> None:
         "[bold cyan]Starting your agent playground...[/]\n"
         "\n"
         f"[bold]Running command:[/]       {cmd_str}\n"
-        f"[bold]Will be available at:[/]  [green underline]{url}[/]"
+        f"[bold]Will be available at:[/]  [green underline][link={url}]{url}[/link][/]"
     )
     _console.print(Panel(body, border_style="cyan"))

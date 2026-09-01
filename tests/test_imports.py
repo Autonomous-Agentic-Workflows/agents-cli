@@ -25,7 +25,16 @@ def test_no_heavy_eager_imports():
 import sys
 import google.agents.cli.main
 
-heavy_modules = ["requests", "yaml", "rich", "packaging"]
+heavy_modules = [
+    "requests",
+    "yaml",
+    "rich",
+    "packaging",
+    "importlib.metadata",
+    "tomllib",
+    "traceback",
+    "logging",
+]
 loaded = [m for m in heavy_modules if any(k == m or k.startswith(m + ".") for k in sys.modules)]
 if loaded:
     print(f"Error: Heavy modules loaded eagerly on import: {loaded}")

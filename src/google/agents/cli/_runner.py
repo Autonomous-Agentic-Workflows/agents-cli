@@ -130,7 +130,9 @@ def run(
     cmd_str = redact_cmd(args)
 
     if print_cmd:
-        click.secho(f"  ▸ {cmd_str}", fg="cyan", dim=True)
+        bullet = click.style("  ▸ ", fg="cyan", bold=True)
+        command_text = click.style(cmd_str, dim=True)
+        click.echo(f"{bullet}{command_text}")
 
     run_env = None
     if env is not None:

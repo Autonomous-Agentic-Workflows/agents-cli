@@ -14,12 +14,17 @@
 
 """Multimodal helpers for building message parts from files."""
 
+from __future__ import annotations
+
 import base64
 import mimetypes
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
-from a2a.types import FilePart, FileWithBytes, Part, TextPart
+
+if TYPE_CHECKING:
+    from a2a.types import Part
 
 # Warn when a file exceeds this size (bytes).
 _SIZE_WARNING_THRESHOLD = 20 * 1024 * 1024  # 20 MB
@@ -35,6 +40,8 @@ def build_a2a_parts(message: str, files: tuple[str, ...] = ()) -> list[Part]:
     Returns:
         List of ``Part`` objects ready for an A2A ``Message``.
     """
+    from a2a.types import FilePart, FileWithBytes, Part, TextPart
+
     parts: list[Part] = []
     if message:
         parts.append(Part(root=TextPart(text=message)))

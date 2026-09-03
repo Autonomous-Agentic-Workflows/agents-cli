@@ -91,3 +91,27 @@ def test_run_auth_step_menu_formatting():
                 call.args[0] if call.args else "" for call in mock_echo.call_args_list
             ]
             assert "  Choose an authentication method:" in printed_texts
+
+
+def test_run_auth_step_menu_colors():
+    """Verify that run_auth_step styles menu option titles in bold cyan and skip in dimmed text."""
+    from google.agents.cli.auth import run_auth_step
+
+    with (
+        patch("google.agents.cli.auth.is_authenticated", return_value=(False, None)),
+        patch("click.prompt", return_value=3),
+        patch("click.secho") as mock_secho,
+    ):
+        assert run_auth_step(show_header=True) is True
+        secho_calls = [call.args[0] for call in mock_secho.call_args_list if call.args]
+        assert "  1. Google Cloud (ADC)" in secho_calls
+        assert "  2. Gemini API Key" in secho_calls
+        assert "  3. Skip" in secho_calls
+
+        # Check call arguments for colors
+        adc_call = [c for c in mock_secho.call_args_list if c.args and c.args[0] == "  1. Google Cloud (ADC)"][0]
+        assert adc_call.kwargs.get("fg") == "cyan"
+        assert adc_call.kwargs.get("bold") is True
+
+        skip_call = [c for c in mock_secho.call_args_list if c.args and c.args[0] == "  3. Skip"][0]
+        assert skip_call.kwargs.get("dim") is True

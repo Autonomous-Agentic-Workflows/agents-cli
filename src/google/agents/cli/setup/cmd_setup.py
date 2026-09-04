@@ -157,11 +157,11 @@ def _check_legacy_skills():
     help="Install as editable from the local repo (for contributors).",
 )
 @click.option(
-    "--interactive",
+    "--interactive/--no-interactive",
     "-i",
     is_flag=True,
-    default=False,
-    help="Enable interactive authentication prompt if not already authenticated.",
+    default=True,
+    help="Enable interactive authentication prompt if not already authenticated (default).",
 )
 @click.option(
     "--skills-source",
@@ -188,7 +188,8 @@ def cmd_setup(*, workspace, skip_auth, dry_run, dev, interactive, skills_source,
     Use --agent to specify specific coding agents (e.g. --agent claude-code --agent cursor) or 'all'.
     Use --dry-run to preview what would happen without executing.
     Use --dev to install agents-cli as editable from the local repo (for contributors).
-    Use --interactive / -i to enable interactive authentication if not already logged in.
+    By default, interactive authentication is enabled if not logged in.
+    Use --no-interactive to disable interactive authentication prompts.
     """
     click.echo("Setting up...")
     click.echo()
@@ -286,7 +287,7 @@ def cmd_setup(*, workspace, skip_auth, dry_run, dev, interactive, skills_source,
         else:
             click.echo()
             click.secho(
-                "  Not authenticated. Run with --interactive (-i) to authenticate interactively.",
+                "  Not authenticated. Run without '--no-interactive' to authenticate interactively.",
                 fg="yellow",
                 dim=True,
             )

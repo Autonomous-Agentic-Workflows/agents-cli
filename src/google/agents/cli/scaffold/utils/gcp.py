@@ -19,8 +19,6 @@ import sys
 import time
 from typing import TYPE_CHECKING
 
-import requests
-
 # Type hints only - no runtime import cost
 if TYPE_CHECKING:
     from rich.console import Console
@@ -116,6 +114,9 @@ def _test_vertex_connection(
     Returns:
         Tuple of (success, error_message)
     """
+    # Lazy-import requests to avoid eager import overhead on module load
+    import requests
+
     user_agent = get_user_agent(context)
     x_goog_api_client = get_x_goog_api_client_header(context)
 
@@ -263,9 +264,12 @@ def verify_credentials_and_vertex(
 
     except google.auth.exceptions.DefaultCredentialsError as e:
         raise Exception(_AUTH_ERROR_MESSAGE) from e
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"Network error connecting to Vertex AI: {e}") from e
     except Exception as e:
+        # Lazy-import requests to avoid eager import overhead on module load
+        import requests
+
+        if isinstance(e, requests.exceptions.RequestException):
+            raise Exception(f"Network error connecting to Vertex AI: {e}") from e
         error_str = str(e).lower()
         if any(
             keyword in error_str for keyword in ["credential", "auth", "login", "token"]
@@ -288,6 +292,9 @@ def get_project_number(project_id: str) -> str:
         ValueError: If the project is not found
         requests.exceptions.HTTPError: For other API failures
     """
+    # Lazy-import requests to avoid eager import overhead on module load
+    import requests
+
     _, _, token = _get_credentials_and_token()
 
     user_agent = get_user_agent()

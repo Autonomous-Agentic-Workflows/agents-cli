@@ -40,6 +40,27 @@ print("OK")
     assert result.returncode == 0, f"Import check failed: {result.stdout}\n{result.stderr}"
 
 
+def test_scaffold_gcp_no_heavy_eager_imports():
+    """Verify that importing google.agents.cli.scaffold.utils.gcp does not eagerly load requests."""
+    code = """
+import sys
+import google.agents.cli.scaffold.utils.gcp
+
+heavy_modules = ["requests"]
+loaded = [m for m in heavy_modules if any(k == m or k.startswith(m + ".") for k in sys.modules)]
+if loaded:
+    print(f"Error: Heavy modules loaded eagerly on import: {loaded}")
+    sys.exit(1)
+print("OK")
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"Import check failed: {result.stdout}\n{result.stderr}"
+
+
 def test_agent_runtime_a2a_no_heavy_eager_imports():
     """Verify that importing google.agents.cli._agent_runtime_a2a does not eagerly load a2a."""
     code = """

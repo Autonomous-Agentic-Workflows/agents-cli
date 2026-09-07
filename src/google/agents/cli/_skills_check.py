@@ -222,7 +222,7 @@ def _record_skills_check() -> None:
 def check_skills_version() -> None:
     """Warn if any installed skill version doesn't match the running CLI version.
 
-    Rate-limited to once per 24 hours via a timestamp file so it can
+    Rate-limited to once per 12 hours via a timestamp file so it can
     run globally on every command without adding latency.
 
     Scans all installed ``google-agents-cli-*`` skills, compares each
@@ -232,13 +232,15 @@ def check_skills_version() -> None:
     if _is_ci() or not _skills_check_is_due():
         return
 
+    # Record timestamp immediately when due so subsequent invocations within the
+    # interval return instantly, even if no skills are installed or found.
+    _record_skills_check()
+
     installed = _find_installed_skills()
     if not installed:
         return
 
     from google.agents.cli import __version__
-
-    _record_skills_check()
 
     mismatched = {name: ver for name, ver in installed.items() if ver != __version__}
     if not mismatched:

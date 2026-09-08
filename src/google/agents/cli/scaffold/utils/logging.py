@@ -12,12 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib.metadata
 import random
-
-from rich.console import Console
-
-console = Console()
 
 MOTTOS = [
     "Your agents are cleared for takeoff.",
@@ -34,6 +29,8 @@ MOTTOS = [
 def _get_version() -> str:
     """Get the package version, with fallback to 'dev'."""
     try:
+        import importlib.metadata
+
         return importlib.metadata.version("google-agents-cli")
     except Exception:
         return "dev"
@@ -58,6 +55,9 @@ def display_welcome_banner(
         register_mode: Whether this is for Gemini Enterprise registration
         quiet: If True, skip the banner (e.g. in auto-approve/programmatic mode)
     """
+    from rich.console import Console
+
+    console = Console()
     version = _get_version()
     motto = random.choice(MOTTOS)
 

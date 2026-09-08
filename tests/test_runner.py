@@ -86,3 +86,29 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_authorization_flags_and_headers():
+    # Standalone authorization flags
+    args_1 = ["curl", "--auth", "secret-user-pass"]
+    assert redact_cmd(args_1) == "curl --auth '[REDACTED]'"
+
+    args_2 = ["curl", "--authorization=Bearer secret_token_xyz"]
+    assert redact_cmd(args_2) == "curl '--authorization=[REDACTED]'"
+
+    args_3 = ["deploy", "--pat", "pat_987654321"]
+    assert redact_cmd(args_3) == "deploy --pat '[REDACTED]'"
+
+    # HTTP Headers
+    args_4 = ["curl", "-H", "Authorization: Bearer secret_jwt_token"]
+    assert redact_cmd(args_4) == "curl -H 'Authorization: [REDACTED]'"
+
+    args_5 = ["curl", "-H", "X-Api-Key: my_secret_api_key_123"]
+    assert redact_cmd(args_5) == "curl -H 'X-Api-Key: [REDACTED]'"
+
+    args_6 = ["curl", "-H", "x-goog-api-key: secret_goog_key"]
+    assert redact_cmd(args_6) == "curl -H 'x-goog-api-key: [REDACTED]'"
+
+    # Standalone Bearer tokens
+    args_7 = ["curl", "-H", "Bearer my_secret_bearer_token"]
+    assert redact_cmd(args_7) == "curl -H 'Bearer [REDACTED]'"

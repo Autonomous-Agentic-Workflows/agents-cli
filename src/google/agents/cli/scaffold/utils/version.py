@@ -16,7 +16,6 @@
 
 import logging
 import time
-from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 PACKAGE_NAME = "google-agents-cli"
@@ -50,8 +49,10 @@ def _record_update_check() -> None:
 def get_current_version() -> str:
     """Get the current installed version of the package."""
     try:
+        from importlib.metadata import PackageNotFoundError, version
+
         return version(PACKAGE_NAME)
-    except PackageNotFoundError:
+    except (PackageNotFoundError, ImportError):
         # Package isn't installed (editable / dev checkout).
         return UNKNOWN_VERSION
 
@@ -141,7 +142,6 @@ except Exception:
 def display_update_message() -> None:
     """Check for updates and display a message if an update is available."""
     try:
-        current = get_current_version()
         try:
             latest = _LATEST_VERSION_CACHE.read_text().strip()
         except OSError:
@@ -149,36 +149,34 @@ def display_update_message() -> None:
 
         # Check if an update is available based on cached latest version
         needs_update = False
-        if (
-            latest != UNKNOWN_VERSION
-            and current != UNKNOWN_VERSION
-            and latest != current
-        ):
-            try:
-                # Lazy import packaging.version only when versions differ to avoid ~25ms startup overhead
-                from packaging import version as pkg_version
+        if latest != UNKNOWN_VERSION:
+            current = get_current_version()
+            if current != UNKNOWN_VERSION and latest != current:
+                try:
+                    # Lazy import packaging.version only when versions differ to avoid ~25ms startup overhead
+                    from packaging import version as pkg_version
 
-                needs_update = pkg_version.parse(latest) > pkg_version.parse(current)
-            except Exception:
-                pass
+                    needs_update = pkg_version.parse(latest) > pkg_version.parse(current)
+                except Exception:
+                    pass
 
-        if needs_update:
-            # Lazy import Console to speed up CLI startup time
-            from rich.console import Console
+                if needs_update:
+                    # Lazy import Console to speed up CLI startup time
+                    from rich.console import Console
 
-            console = Console()
-            console.print(
-                f"\n[yellow]⚠️  Update available: {current} → {latest}[/]",
-                highlight=False,
-            )
-            console.print(
-                f"[yellow]Run `uv tool upgrade {PACKAGE_NAME}` to update.[/]",
-                highlight=False,
-            )
-            console.print(
-                f"[dim]If you installed differently: pip install --upgrade {PACKAGE_NAME} | pipx upgrade {PACKAGE_NAME}[/]",
-                highlight=False,
-            )
+                    console = Console()
+                    console.print(
+                        f"\n[yellow]⚠️  Update available: {current} → {latest}[/]",
+                        highlight=False,
+                    )
+                    console.print(
+                        f"[yellow]Run `uv tool upgrade {PACKAGE_NAME}` to update.[/]",
+                        highlight=False,
+                    )
+                    console.print(
+                        f"[dim]If you installed differently: pip install --upgrade {PACKAGE_NAME} | pipx upgrade {PACKAGE_NAME}[/]",
+                        highlight=False,
+                    )
     except Exception as e:
         # Don't let version displaying errors affect the CLI
         logging.debug(f"Error displaying update message: {e}")

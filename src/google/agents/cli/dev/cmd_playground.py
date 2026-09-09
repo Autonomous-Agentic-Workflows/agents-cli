@@ -16,6 +16,7 @@
 
 import os
 import shlex
+import webbrowser
 
 import click
 from rich.console import Console
@@ -45,7 +46,15 @@ _console = Console()
     default=False,
     help="Export traces to Google Cloud Trace.",
 )
-def cmd_playground(port, host, reload_agents, trace_to_cloud):
+@click.option(
+    "--open",
+    "-o",
+    "open_browser",
+    is_flag=True,
+    default=False,
+    help="Automatically open the playground URL in default browser.",
+)
+def cmd_playground(port, host, reload_agents, trace_to_cloud, open_browser):
     """Start the local agent playground."""
     chdir_project_root()
     cfg = read_project_config()
@@ -80,6 +89,8 @@ def cmd_playground(port, host, reload_agents, trace_to_cloud):
         args.append("--trace_to_cloud")
 
     _print_banner(url, args)
+    if open_browser:
+        webbrowser.open(url)
     run(args, print_cmd=False, check_err_msg="Failed to start playground")
 
 

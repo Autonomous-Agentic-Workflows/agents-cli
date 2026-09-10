@@ -228,22 +228,17 @@ def cmd_setup(*, workspace, skip_auth, dry_run, dev, interactive, skills_source,
                     "--dev requires running from the root of the agents-cli repository"
                 )
             click.echo("  Would install agents-cli (editable):")
-            click.secho(
-                f"  \u25b8 uv tool install --force --editable {project_root}",
-                fg="cyan",
-                dim=True,
-            )
+            click.secho("  \u25b8 ", fg="cyan", bold=True, nl=False)
+            click.secho(f"uv tool install --force --editable {project_root}", dim=True)
         else:
             click.echo("  Would install agents-cli:")
-            click.secho(
-                "  \u25b8 uv tool install google-agents-cli",
-                fg="cyan",
-                dim=True,
-            )
+            click.secho("  \u25b8 ", fg="cyan", bold=True, nl=False)
+            click.secho("uv tool install google-agents-cli", dim=True)
         click.echo()
         click.echo("  Would install skills:")
         full_args = ["npx", "-y", SKILLS_NPX_PACKAGE, *args]
-        click.secho(f"  \u25b8 {shlex.join(full_args)}", fg="cyan", dim=True)
+        click.secho("  \u25b8 ", fg="cyan", bold=True, nl=False)
+        click.secho(shlex.join(full_args), dim=True)
         click.echo(f"  Scope: {scope}")
         # Temporary compatibility step (see TODO at the real linking call below).
         if not workspace and (Path.home() / ".gemini").is_dir():

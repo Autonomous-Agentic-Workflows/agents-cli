@@ -48,11 +48,6 @@ from google.agents.cli.deploy._utils import (
     redact_command,
     resolve_service_name,
 )
-from google.agents.cli.deploy.agent_runtime import (
-    check_agent_runtime_operation,
-    deploy_agent_runtime,
-    parse_secrets,
-)
 from google.agents.cli.scaffold.utils.language import get_project_version
 
 
@@ -616,6 +611,8 @@ def cmd_deploy(
                     )
             click.echo(msg)
             return
+        from google.agents.cli.deploy.agent_runtime import deploy_agent_runtime
+
         deploy_agent_runtime(
             cfg=cfg,
             project=project,
@@ -719,6 +716,8 @@ def cmd_deploy(
         # Use --update-secrets (merge) to match the --update-env-vars semantics above,
         # rather than --set-secrets, which would drop any not listed here.
         if secrets:
+            from google.agents.cli.deploy.agent_runtime import parse_secrets
+
             parsed_secrets = parse_secrets(secrets)
             overlap = parsed_secrets.keys() & env_var_map.keys()
             if overlap:
@@ -785,6 +784,10 @@ def _check_deploy_status(
 ) -> None:
     """Check the status of a pending --no-wait deployment."""
     if cfg.deployment_target == "agent_runtime":
+        from google.agents.cli.deploy.agent_runtime import (
+            check_agent_runtime_operation,
+        )
+
         check_agent_runtime_operation(
             cfg=cfg,
             project=project,

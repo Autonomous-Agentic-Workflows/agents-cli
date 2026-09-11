@@ -14,7 +14,10 @@
 
 """Tests for subprocess helpers/redactions."""
 
+from unittest.mock import MagicMock, patch
+
 from google.agents.cli._runner import redact_cmd
+from google.agents.cli._tools import run_npx_skills
 
 
 def test_redact_cmd_github_pat():
@@ -86,3 +89,22 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+@patch("click.secho")
+@patch("google.agents.cli._runner.popen_resolved")
+def test_run_npx_skills_redacts_sensitive_args(mock_popen, mock_secho):
+    mock_proc = MagicMock()
+    mock_proc.stdout = ["Done: 1 skill added."]
+    mock_proc.stderr = MagicMock()
+    mock_proc.stderr.read.return_value = ""
+    mock_proc.returncode = 0
+    mock_popen.return_value = mock_proc
+
+    run_npx_skills(["add", "https://github.com/foo/bar", "--api-key", "secret123"], "Installing")
+
+    # Assert click.secho was called with the prompt bullet and redacted args
+    secho_args, secho_kwargs = mock_secho.call_args_list[0]
+    printed_cmd = secho_args[0]
+    assert "[REDACTED]" in printed_cmd
+    assert "secret123" not in printed_cmd

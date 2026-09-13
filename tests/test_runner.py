@@ -73,12 +73,18 @@ def test_redact_cmd_case_insensitive_and_extended():
     args_2 = ["python", "-m", "main", "--Api_Key=AIzaSyKey123"]
     assert redact_cmd(args_2) == "python -m main '--Api_Key=[REDACTED]'"
 
-    # Extended options (e.g. password, token, secret)
+    # Extended options (e.g. password, token, secret, authorization, bearer-token, pat)
     args_3 = ["deploy", "--password", "supersecretpwd"]
     assert redact_cmd(args_3) == "deploy --password '[REDACTED]'"
 
     args_4 = ["deploy", "--access-token=my-access-token-123"]
     assert redact_cmd(args_4) == "deploy '--access-token=[REDACTED]'"
+
+    args_4b = ["curl", "--authorization", "Bearer secret123"]
+    assert redact_cmd(args_4b) == "curl --authorization '[REDACTED]'"
+
+    args_4c = ["deploy", "--private-key=my_private_key_content"]
+    assert redact_cmd(args_4c) == "deploy '--private-key=[REDACTED]'"
 
     # Case-insensitive env vars (e.g. lowercase)
     args_5 = ["env", "gemini_api_key=AIzaSyKey123", "python"]
@@ -86,3 +92,19 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+    args_7 = ["env", "BEARER_TOKEN=my_bearer_token", "python"]
+    assert redact_cmd(args_7) == "env 'BEARER_TOKEN=[REDACTED]' python"
+
+
+def test_redact_cmd_http_headers_and_bearer_tokens():
+    # HTTP authorization header redaction
+    args_1 = ["curl", "-H", "Authorization: Bearer secret_jwt_token", "https://api.example.com"]
+    assert redact_cmd(args_1) == "curl -H 'Authorization: [REDACTED]' https://api.example.com"
+
+    args_2 = ["curl", "-H", "X-Api-Key: secret_key_abc", "https://api.example.com"]
+    assert redact_cmd(args_2) == "curl -H 'X-Api-Key: [REDACTED]' https://api.example.com"
+
+    # Standalone Bearer token argument
+    args_3 = ["cli-tool", "--header", "Bearer eyJhbGciOiJKV1QiLCJhb..."]
+    assert redact_cmd(args_3) == "cli-tool --header 'Bearer [REDACTED]'"

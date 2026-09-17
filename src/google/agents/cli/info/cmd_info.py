@@ -23,7 +23,7 @@ import click
 from rich.console import Console
 
 import google.agents.cli as _cli_pkg
-from google.agents.cli.__init__ import __version__
+from google.agents.cli import __version__
 from google.agents.cli._output import emit
 from google.agents.cli._project import (
     check_cli_version,

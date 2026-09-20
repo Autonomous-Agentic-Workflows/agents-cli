@@ -26,15 +26,12 @@ import logging
 import os
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
-import pathspec
-import vertexai
-from google.cloud import resourcemanager_v3
-from google.iam.v1 import iam_policy_pb2, policy_pb2
-from vertexai._genai import _agent_engines_utils
-from vertexai._genai.types import AgentEngine, AgentEngineConfig, IdentityType
+
+if TYPE_CHECKING:
+    from vertexai._genai.types import AgentEngine, AgentEngineConfig
 
 from google.agents.cli._agent_runtime_a2a import build_agent_runtime_a2a_card_url
 from google.agents.cli._project import (
@@ -228,6 +225,10 @@ def print_deployment_success(
 
 def setup_agent_identity(client: Any, project: str, display_name: str) -> Any:
     """Create agent with identity and grant required IAM roles."""
+    from google.cloud import resourcemanager_v3
+    from google.iam.v1 import iam_policy_pb2, policy_pb2
+    from vertexai._genai.types import IdentityType
+
     click.echo(f"\n🔧 Creating agent identity for: {display_name}")
     agent = client.agent_engines.create(
         config={
@@ -330,6 +331,8 @@ def _packaged_files(root: Path) -> list[str]:
     """``./``-prefixed paths of files under ``root``, excluding anything ignored
     per :func:`_ignore_lines`.
     """
+    import pathspec
+
     spec = pathspec.PathSpec.from_lines("gitwildmatch", _ignore_lines(root))
     files: list[str] = []
     # Sort dirs/files for a deterministic, reproducible archive order.
@@ -422,6 +425,10 @@ def deploy_agent_runtime(
             "Dockerfile is present but excluded by .gcloudignore/.gitignore.\n"
             "  Remove the matching ignore pattern so the deploy can package it."
         )
+
+    import vertexai
+    from vertexai._genai import _agent_engines_utils
+    from vertexai._genai.types import AgentEngineConfig, IdentityType
 
     # Parse CLI environment variables, secrets, and labels
     secrets = parse_secrets(set_secrets)
@@ -737,6 +744,8 @@ def check_agent_runtime_operation(
     location: str = "us-east1",
 ) -> None:
     """Check the status of a pending Agent Runtime deploy operation."""
+    import vertexai
+
     op_data = read_operation()
     if not op_data:
         raise click.ClickException(

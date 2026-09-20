@@ -73,12 +73,21 @@ def test_redact_cmd_case_insensitive_and_extended():
     args_2 = ["python", "-m", "main", "--Api_Key=AIzaSyKey123"]
     assert redact_cmd(args_2) == "python -m main '--Api_Key=[REDACTED]'"
 
-    # Extended options (e.g. password, token, secret)
+    # Extended options (e.g. password, token, secret, bearer token, authorization)
     args_3 = ["deploy", "--password", "supersecretpwd"]
     assert redact_cmd(args_3) == "deploy --password '[REDACTED]'"
 
     args_4 = ["deploy", "--access-token=my-access-token-123"]
     assert redact_cmd(args_4) == "deploy '--access-token=[REDACTED]'"
+
+    args_7 = ["deploy", "--bearer-token", "bearer_sec_123"]
+    assert redact_cmd(args_7) == "deploy --bearer-token '[REDACTED]'"
+
+    args_8 = ["deploy", "--authorization=Bearer secret_tok"]
+    assert redact_cmd(args_8) == "deploy '--authorization=[REDACTED]'"
+
+    args_9 = ["deploy", "--credentials", "creds_key"]
+    assert redact_cmd(args_9) == "deploy --credentials '[REDACTED]'"
 
     # Case-insensitive env vars (e.g. lowercase)
     args_5 = ["env", "gemini_api_key=AIzaSyKey123", "python"]

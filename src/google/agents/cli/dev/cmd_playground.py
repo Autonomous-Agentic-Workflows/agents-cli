@@ -15,7 +15,6 @@
 """agents-cli playground command — start local agent playground."""
 
 import os
-import shlex
 
 import click
 from rich.console import Console
@@ -26,7 +25,7 @@ from google.agents.cli._project import (
     read_project_config,
     require_agent_directory,
 )
-from google.agents.cli._runner import run
+from google.agents.cli._runner import redact_cmd, run
 
 _console = Console()
 
@@ -85,7 +84,7 @@ def cmd_playground(port, host, reload_agents, trace_to_cloud):
 
 def _print_banner(url: str, cmd_args: list[str]) -> None:
     """Print a styled banner with a clickable URL pointing at the agent."""
-    cmd_str = shlex.join(cmd_args)
+    cmd_str = redact_cmd(cmd_args)
     body = (
         "[bold cyan]Starting your agent playground...[/]\n"
         "\n"

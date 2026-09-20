@@ -39,11 +39,18 @@ _SENSITIVE_OPTIONS = {
     "--access_token",
     "--auth-token",
     "--auth_token",
+    "--bearer-token",
+    "--bearer_token",
+    "--authorization",
+    "--auth",
     "--token",
     "--password",
     "--secret",
     "--client-secret",
     "--client_secret",
+    "--pat",
+    "--credential",
+    "--credentials",
 }
 _SENSITIVE_PREFIXES = tuple(opt + "=" for opt in sorted(_SENSITIVE_OPTIONS))
 

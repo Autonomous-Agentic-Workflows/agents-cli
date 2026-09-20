@@ -45,6 +45,7 @@ def cmd_install(clean: bool, locked: bool):
     if locked:
         cmd.append("--locked")
     run(cmd, check_err_msg="Failed to install dependencies")
+    click.secho("✓ Dependencies installed successfully.", fg="green")
 
 
 def _delete_venv():

@@ -73,16 +73,36 @@ def test_redact_cmd_case_insensitive_and_extended():
     args_2 = ["python", "-m", "main", "--Api_Key=AIzaSyKey123"]
     assert redact_cmd(args_2) == "python -m main '--Api_Key=[REDACTED]'"
 
-    # Extended options (e.g. password, token, secret)
+    # Extended options (e.g. password, token, secret, auth, credential, pat)
     args_3 = ["deploy", "--password", "supersecretpwd"]
     assert redact_cmd(args_3) == "deploy --password '[REDACTED]'"
 
     args_4 = ["deploy", "--access-token=my-access-token-123"]
     assert redact_cmd(args_4) == "deploy '--access-token=[REDACTED]'"
 
-    # Case-insensitive env vars (e.g. lowercase)
-    args_5 = ["env", "gemini_api_key=AIzaSyKey123", "python"]
-    assert redact_cmd(args_5) == "env 'gemini_api_key=[REDACTED]' python"
+    args_5 = ["curl", "--bearer-token", "token123", "--authorization", "Bearer xyz"]
+    assert (
+        redact_cmd(args_5)
+        == "curl --bearer-token '[REDACTED]' --authorization '[REDACTED]'"
+    )
 
-    args_6 = ["env", "db_password=mypassword", "python"]
-    assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+    args_6 = ["gh", "auth", "--pat", "ghp_12345"]
+    assert redact_cmd(args_6) == "gh auth --pat '[REDACTED]'"
+
+    # Case-insensitive env vars (e.g. lowercase)
+    args_7 = ["env", "gemini_api_key=AIzaSyKey123", "python"]
+    assert redact_cmd(args_7) == "env 'gemini_api_key=[REDACTED]' python"
+
+    args_8 = ["env", "db_password=mypassword", "python"]
+    assert redact_cmd(args_8) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_headers_and_bearer_tokens():
+    args_1 = ["curl", "-H", "Authorization: Bearer secret_tok_123", "https://example.com"]
+    assert redact_cmd(args_1) == "curl -H 'Authorization: [REDACTED]' https://example.com"
+
+    args_2 = ["curl", "-H", "X-Api-Key: my_api_key_123", "https://example.com"]
+    assert redact_cmd(args_2) == "curl -H 'X-Api-Key: [REDACTED]' https://example.com"
+
+    args_3 = ["fetch", "Bearer my_secret_token"]
+    assert redact_cmd(args_3) == "fetch 'Bearer [REDACTED]'"

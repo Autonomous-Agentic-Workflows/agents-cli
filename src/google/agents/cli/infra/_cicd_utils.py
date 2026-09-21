@@ -17,7 +17,6 @@
 import json
 import os
 import re
-import shlex
 import subprocess
 import time
 from dataclasses import dataclass
@@ -369,8 +368,10 @@ def run_command(
     env_vars: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess:
     """Run a command with backoff retries for CI/CD operations."""
-    # Format command for display exactly like the old version
-    cmd_str = shlex.join(cmd)
+    from google.agents.cli._runner import redact_cmd
+
+    # Format command for display with secrets redacted
+    cmd_str = redact_cmd(cmd)
     click.echo(f"\n🔄 Running command: {cmd_str}")
     if cwd:
         click.echo(f"📂 In directory: {cwd}")

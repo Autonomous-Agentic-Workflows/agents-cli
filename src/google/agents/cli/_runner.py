@@ -28,22 +28,33 @@ from google.agents.cli import _tools
 # Pre-defined sensitive options and prefixes for fast O(1) membership lookup
 # and zero per-invocation allocation overhead in redact_cmd.
 _SENSITIVE_OPTIONS = {
+    "--access-token",
+    "--access_token",
+    "--api-key",
+    "--api_key",
+    "--apikey",
+    "--auth",
+    "--auth-token",
+    "--auth_token",
+    "--authorization",
+    "--bearer-token",
+    "--bearer_token",
+    "--client-secret",
+    "--client_secret",
+    "--credential",
+    "--credentials",
     "--github-pat",
     "--github_pat",
     "--github-token",
     "--github_token",
-    "--api-key",
-    "--api_key",
-    "--apikey",
-    "--access-token",
-    "--access_token",
-    "--auth-token",
-    "--auth_token",
-    "--token",
     "--password",
+    "--pat",
+    "--private-key",
+    "--private_key",
     "--secret",
-    "--client-secret",
-    "--client_secret",
+    "--secret-key",
+    "--secret_key",
+    "--token",
 }
 _SENSITIVE_PREFIXES = tuple(opt + "=" for opt in sorted(_SENSITIVE_OPTIONS))
 
@@ -72,6 +83,8 @@ def redact_cmd(args: list[str]) -> str:
     redacted_cmd_list = list(args)
 
     for i, raw_arg in enumerate(args):
+        if redacted_cmd_list[i] == "[REDACTED]":
+            continue
         arg = str(raw_arg)
         arg_lower = arg.lower()
         if arg_lower in _SENSITIVE_OPTIONS and i + 1 < len(args):
@@ -79,6 +92,11 @@ def redact_cmd(args: list[str]) -> str:
         elif arg_lower.startswith(_SENSITIVE_PREFIXES):
             opt_name, value = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
+        elif arg_lower.startswith(("authorization:", "x-api-key:")):
+            header_name, _, _ = arg.partition(":")
+            redacted_cmd_list[i] = f"{header_name}: [REDACTED]"
+        elif arg_lower.startswith("bearer "):
+            redacted_cmd_list[i] = "Bearer [REDACTED]"
         elif any(secret in arg.upper() for secret in _SENSITIVE_ENV_VARS):
             if "=" in arg:
                 key, sep, val = arg.partition("=")

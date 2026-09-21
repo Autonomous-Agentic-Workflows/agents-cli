@@ -19,8 +19,6 @@ import sys
 import time
 from typing import TYPE_CHECKING
 
-import requests
-
 # Type hints only - no runtime import cost
 if TYPE_CHECKING:
     from rich.console import Console
@@ -116,6 +114,8 @@ def _test_vertex_connection(
     Returns:
         Tuple of (success, error_message)
     """
+    import requests
+
     user_agent = get_user_agent(context)
     x_goog_api_client = get_x_goog_api_client_header(context)
 
@@ -212,6 +212,7 @@ def verify_credentials_and_vertex(
         Exception on authentication or connection failure
     """
     import google.auth.exceptions
+    import requests
     from rich.prompt import Confirm
 
     try:
@@ -288,6 +289,8 @@ def get_project_number(project_id: str) -> str:
         ValueError: If the project is not found
         requests.exceptions.HTTPError: For other API failures
     """
+    import requests
+
     _, _, token = _get_credentials_and_token()
 
     user_agent = get_user_agent()

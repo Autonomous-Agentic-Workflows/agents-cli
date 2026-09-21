@@ -11,3 +11,7 @@
 ## 2026-03-07 - Cross-Platform Paths in Detached Inline Subprocesses
 **Learning:** When spawning detached Python background processes running inline python code via `python -c "..."` on Windows systems, unescaped backslashes in raw filesystem paths (e.g. from `Path.home()`) cause python compilation `SyntaxError`s when interpolated into strings.
 **Action:** Always convert local filesystem `Path` objects to POSIX-style paths using `.as_posix()` before interpolating them into inline subprocess commands.
+
+## 2026-03-08 - Transitive Eager Imports via Helper Modules
+**Learning:** When command modules (e.g., `cmd_run.py`) import internal utility/helper modules (e.g., `_multimodal.py`), top-level imports of heavy SDKs (like `a2a.types`) in those helper modules transitively trigger eager loading of the heavy SDKs. Deferring heavy imports inside function bodies in both command modules AND their internal helper modules prevents transitive eager loading, cutting module load time by >500ms.
+**Action:** When lazy-importing in command entrypoints, inspect internal helper modules for top-level heavy imports that would otherwise cause transitive eager loading.

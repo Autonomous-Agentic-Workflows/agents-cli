@@ -39,11 +39,21 @@ _SENSITIVE_OPTIONS = {
     "--access_token",
     "--auth-token",
     "--auth_token",
+    "--authorization",
+    "--bearer-token",
+    "--bearer_token",
+    "--id-token",
+    "--id_token",
+    "--refresh-token",
+    "--refresh_token",
     "--token",
     "--password",
     "--secret",
     "--client-secret",
     "--client_secret",
+    "--pat",
+    "--credential",
+    "--credentials",
 }
 _SENSITIVE_PREFIXES = tuple(opt + "=" for opt in sorted(_SENSITIVE_OPTIONS))
 
@@ -54,9 +64,12 @@ _SENSITIVE_ENV_VARS = (
     "GITHUB_APP_KEY",
     "GEMINI_API_KEY",
     "GOOGLE_API_KEY",
+    "API_KEY",
     "ACCESS_TOKEN",
     "AUTH_TOKEN",
     "ID_TOKEN",
+    "BEARER_TOKEN",
+    "REFRESH_TOKEN",
     "SECRET_KEY",
     "DB_PASSWORD",
     "DB_PASS",
@@ -67,14 +80,30 @@ _SENSITIVE_ENV_VARS = (
 def redact_cmd(args: list[str]) -> str:
     """Mask sensitive information in command arguments and return joined string.
 
-    Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
+    Masks arguments like --github-pat, --api-key, --authorization, HTTP authorization headers,
+    and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
 
     for i, raw_arg in enumerate(args):
+        if i > 0 and str(args[i - 1]).lower() in _SENSITIVE_OPTIONS:
+            # Already redacted as the value following a sensitive option flag.
+            continue
+
         arg = str(raw_arg)
         arg_lower = arg.lower()
-        if arg_lower in _SENSITIVE_OPTIONS and i + 1 < len(args):
+
+        if arg_lower.startswith((
+            "authorization:",
+            "x-api-key:",
+            "bearer ",
+        )):
+            hdr_name, sep, _ = arg.partition(":")
+            if sep:
+                redacted_cmd_list[i] = f"{hdr_name}: [REDACTED]"
+            else:
+                redacted_cmd_list[i] = "Bearer [REDACTED]"
+        elif arg_lower in _SENSITIVE_OPTIONS and i + 1 < len(args):
             redacted_cmd_list[i + 1] = "[REDACTED]"
         elif arg_lower.startswith(_SENSITIVE_PREFIXES):
             opt_name, value = arg.split("=", 1)

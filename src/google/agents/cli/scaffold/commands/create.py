@@ -943,15 +943,22 @@ def create(
 
     if not in_folder:
         project_path = destination_dir / project_name
-        cd_path = project_path if output_dir else project_name
+        cd_path = str(project_path if output_dir else project_name)
     else:
         project_path = destination_dir
         cd_path = "."
 
+    readme_cmd = "cat README.md" if cd_path == "." else f"cat {cd_path}/README.md"
+    get_started_cmd = (
+        "agents-cli install && agents-cli playground"
+        if cd_path == "."
+        else f"cd {cd_path} && agents-cli install && agents-cli playground"
+    )
+
     console.print("\n[bold green]✅ Success![/] Your agent project is ready.\n")
 
     console.print("[bold cyan]📖 Documentation[/]")
-    console.print(f"   README:    [cyan]cat {cd_path}/README.md[/]")
+    console.print(f"   README:    [cyan]{readme_cmd}[/cyan]")
 
     # Show enhance hint for prototype mode
     if final_deployment == "none":
@@ -969,9 +976,7 @@ def create(
     # Check if the agent has a 'dev' command in its settings
     config.get("settings", {}).get("interactive_command", "playground")
     console.print("\n[bold cyan]🚀 Get Started[/]")
-    console.print(
-        f"   [bold bright_green]cd {cd_path} && agents-cli install && agents-cli playground[/]"
-    )
+    console.print(f"   [bold bright_green]{get_started_cmd}[/]")
 
 
 def prompt_region_confirmation(

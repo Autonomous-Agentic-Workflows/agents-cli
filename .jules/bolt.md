@@ -11,3 +11,7 @@
 ## 2026-03-07 - Cross-Platform Paths in Detached Inline Subprocesses
 **Learning:** When spawning detached Python background processes running inline python code via `python -c "..."` on Windows systems, unescaped backslashes in raw filesystem paths (e.g. from `Path.home()`) cause python compilation `SyntaxError`s when interpolated into strings.
 **Action:** Always convert local filesystem `Path` objects to POSIX-style paths using `.as_posix()` before interpolating them into inline subprocess commands.
+
+## 2026-03-08 - Deferring `importlib.metadata` via PEP 562 & Click `package_name`
+**Learning:** Top-level package version checks using `importlib.metadata.version()` during module initialization eagerly trigger expensive distribution metadata scans, taking ~85ms on CLI startup. Deferred loading via module-level `__getattr__` combined with `@click.version_option(package_name="...")` completely removes `importlib.metadata` from the normal CLI startup path.
+**Action:** Avoid calling `importlib.metadata` at top-level; use PEP 562 `__getattr__` and Click's `package_name` parameter to lazily evaluate version metadata on demand.

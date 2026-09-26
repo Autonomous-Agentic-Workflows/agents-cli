@@ -16,9 +16,7 @@
 
 from __future__ import annotations
 
-import logging
 import os
-import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -122,7 +120,9 @@ def read_project_config(project_dir: str | None = None) -> ProjectConfig:
         with open(manifest_path, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
     elif pyproject_path.exists():
-        # Fallback: read from pyproject.toml
+        # Fallback: read from pyproject.toml (lazy-import tomllib for legacy fallback)
+        import tomllib
+
         with open(pyproject_path, "rb") as f:
             pyproj_data = tomllib.load(f)
         if not pyproj_data.get("tool", {}).get("agents-cli"):
@@ -203,6 +203,9 @@ def _find_legacy_project_root(start_dir: Path) -> Path | None:
         pyproject_path = parent / "pyproject.toml"
         if pyproject_path.exists():
             try:
+                # Lazy-import tomllib for legacy pyproject.toml discovery
+                import tomllib
+
                 with open(pyproject_path, "rb") as f:
                     data = tomllib.load(f)
                 if "tool" in data and "agents-cli" in data["tool"]:
@@ -254,6 +257,9 @@ def is_project_moved() -> bool:
                     current_path = venv_dir.resolve()
                     return stored_path != current_path
     except Exception as e:
+        # Lazy-import logging on error path
+        import logging
+
         logging.warning(f"Error checking if project moved: {e}")
     return False
 

@@ -14,7 +14,17 @@
 
 """Tests for subprocess helpers/redactions."""
 
-from google.agents.cli._runner import redact_cmd
+from unittest.mock import patch
+from google.agents.cli._runner import redact_cmd, run
+
+
+def test_run_print_cmd_styling(capsys):
+    with patch("subprocess.run") as mock_sub_run:
+        mock_sub_run.return_value.returncode = 0
+        run(["echo", "hello"], print_cmd=True, capture=True)
+    captured = capsys.readouterr()
+    assert "▸" in captured.out
+    assert "echo hello" in captured.out
 
 
 def test_redact_cmd_github_pat():

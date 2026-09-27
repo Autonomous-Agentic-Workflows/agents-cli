@@ -86,3 +86,29 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_generic_secrets_and_comma_separated():
+    # Generic secret env vars (OpenAI, Anthropic, Bearer Token, Private Key)
+    args_1 = ["env", "OPENAI_API_KEY=sk-12345", "python"]
+    assert redact_cmd(args_1) == "env 'OPENAI_API_KEY=[REDACTED]' python"
+
+    args_2 = ["env", "BEARER_TOKEN=token123", "python"]
+    assert redact_cmd(args_2) == "env 'BEARER_TOKEN=[REDACTED]' python"
+
+    args_3 = ["env", "PRIVATE_KEY=pk_secret", "python"]
+    assert redact_cmd(args_3) == "env 'PRIVATE_KEY=[REDACTED]' python"
+
+    # New options flags
+    args_4 = ["deploy", "--bearer-token", "bearer123"]
+    assert redact_cmd(args_4) == "deploy --bearer-token '[REDACTED]'"
+
+    args_5 = ["deploy", "--private-key=pk_123"]
+    assert redact_cmd(args_5) == "deploy '--private-key=[REDACTED]'"
+
+    # Comma-separated env vars
+    args_6 = ["deploy", "--update-env-vars", "FOO=bar,OPENAI_API_KEY=sk-123,BAZ=qux"]
+    assert (
+        redact_cmd(args_6)
+        == "deploy --update-env-vars 'FOO=bar,OPENAI_API_KEY=[REDACTED],BAZ=qux'"
+    )

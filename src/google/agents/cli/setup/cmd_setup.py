@@ -20,7 +20,7 @@ from pathlib import Path
 
 import click
 
-from google.agents.cli._runner import run
+from google.agents.cli._runner import redact_cmd, run
 from google.agents.cli._skills_check import SKILLS_NPX_PACKAGE
 from google.agents.cli._tools import run_npx_skills
 
@@ -243,7 +243,7 @@ def cmd_setup(*, workspace, skip_auth, dry_run, dev, interactive, skills_source,
         click.echo()
         click.echo("  Would install skills:")
         full_args = ["npx", "-y", SKILLS_NPX_PACKAGE, *args]
-        click.secho(f"  \u25b8 {shlex.join(full_args)}", fg="cyan", dim=True)
+        click.secho(f"  \u25b8 {redact_cmd(full_args)}", fg="cyan", dim=True)
         click.echo(f"  Scope: {scope}")
         # Temporary compatibility step (see TODO at the real linking call below).
         if not workspace and (Path.home() / ".gemini").is_dir():

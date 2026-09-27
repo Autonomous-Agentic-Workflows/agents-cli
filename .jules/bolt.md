@@ -11,3 +11,7 @@
 ## 2026-03-07 - Cross-Platform Paths in Detached Inline Subprocesses
 **Learning:** When spawning detached Python background processes running inline python code via `python -c "..."` on Windows systems, unescaped backslashes in raw filesystem paths (e.g. from `Path.home()`) cause python compilation `SyntaxError`s when interpolated into strings.
 **Action:** Always convert local filesystem `Path` objects to POSIX-style paths using `.as_posix()` before interpolating them into inline subprocess commands.
+
+## 2026-03-08 - Deferring Standard Library Imports on Fallback and Exception Paths
+**Learning:** Eagerly importing standard library modules at module top-level (such as `tomllib`, `traceback`, and `logging`) adds ~35ms+ of import latency when loading `main` or `_project` CLI modules, even though `tomllib` is only used for legacy fallback manifests and `traceback` is only used when unhandled exceptions occur.
+**Action:** Defer standard library imports that are only needed on cold error or fallback paths into their respective exception handlers or fallback branches.

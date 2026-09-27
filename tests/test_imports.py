@@ -40,6 +40,29 @@ print("OK")
     assert result.returncode == 0, f"Import check failed: {result.stdout}\n{result.stderr}"
 
 
+def test_init_no_importlib_metadata_eager_import():
+    """Verify that importing google.agents.cli does not eagerly load importlib.metadata."""
+    code = """
+import sys
+import google.agents.cli
+
+if "importlib.metadata" in sys.modules:
+    print("Error: importlib.metadata loaded eagerly on importing package __init__")
+    sys.exit(1)
+
+# Verify lazy attribute resolution works
+assert hasattr(google.agents.cli, "__version__")
+assert "importlib.metadata" in sys.modules
+print("OK")
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"Import check failed: {result.stdout}\n{result.stderr}"
+
+
 def test_agent_runtime_a2a_no_heavy_eager_imports():
     """Verify that importing google.agents.cli._agent_runtime_a2a does not eagerly load a2a."""
     code = """

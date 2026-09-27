@@ -76,7 +76,7 @@ class _MainGroup(LazyGroup):
 
 
 @click.group(cls=_MainGroup)
-@click.version_option(version=__version__, prog_name="agents-cli")
+@click.version_option(package_name="google-agents-cli", prog_name="agents-cli")
 def main():
     """Agents CLI — Agent Development Lifecycle toolchain.
 

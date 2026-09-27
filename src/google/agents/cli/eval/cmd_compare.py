@@ -48,7 +48,11 @@ def _diff(base: dict, cand: dict, prefix: str = "") -> dict:
         entry = {"baseline": base_val, "candidate": cand_val}
         if isinstance(base_val, (int, float)) and isinstance(cand_val, (int, float)):
             delta = cand_val - base_val
-            entry["delta"] = f"+{delta}" if delta >= 0 else str(delta)
+            if isinstance(delta, float):
+                formatted_delta = f"+{delta:.4f}" if delta >= 0 else f"{delta:.4f}"
+            else:
+                formatted_delta = f"+{delta}" if delta >= 0 else str(delta)
+            entry["delta"] = formatted_delta
         differences[full_key] = entry
 
     if prefix:
@@ -63,15 +67,89 @@ def _diff(base: dict, cand: dict, prefix: str = "") -> dict:
     }
 
 
+def _format_val(val) -> str:
+    if isinstance(val, float):
+        return f"{val:.4f}"
+    return str(val) if val is not None else "(none)"
+
+
+def _print_table(diff_result: dict, baseline_name: str, candidate_name: str) -> None:
+    from rich.console import Console
+    from rich.table import Table
+
+    console = Console()
+    differences = diff_result.get("differences", {})
+
+    if not differences:
+        console.print(
+            "[yellow]No differences found between baseline and candidate.[/yellow]"
+        )
+        return
+
+    table = Table(
+        title=f"Evaluation Comparison: {baseline_name} vs {candidate_name}",
+        show_header=True,
+        header_style="bold magenta",
+    )
+    table.add_column("Metric / Key", style="cyan")
+    table.add_column("Baseline", justify="right")
+    table.add_column("Candidate", justify="right")
+    table.add_column("Delta", justify="right")
+
+    for key, entry in sorted(differences.items()):
+        base_val = entry.get("baseline")
+        cand_val = entry.get("candidate")
+        base_str = _format_val(base_val)
+        cand_str = _format_val(cand_val)
+
+        if isinstance(base_val, (int, float)) and isinstance(cand_val, (int, float)):
+            delta = cand_val - base_val
+            if delta > 0:
+                delta_str = (
+                    f"[green]+{delta:.4f}[/green]"
+                    if isinstance(delta, float)
+                    else f"[green]+{delta}[/green]"
+                )
+            elif delta < 0:
+                delta_str = (
+                    f"[red]{delta:.4f}[/red]"
+                    if isinstance(delta, float)
+                    else f"[red]{delta}[/red]"
+                )
+            else:
+                delta_str = f"[dim]{delta}[/dim]"
+        else:
+            delta_str = "[dim]N/A[/dim]"
+
+        table.add_row(key, base_str, cand_str, delta_str)
+
+    console.print(table)
+
+
 @click.command("compare")
 @click.argument("baseline", type=click.Path(exists=True))
 @click.argument("candidate", type=click.Path(exists=True))
-def cmd_compare(baseline, candidate):
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["table", "json"], case_sensitive=False),
+    default="table",
+    show_default=True,
+    help="Output format (table or json).",
+)
+def cmd_compare(baseline, candidate, output_format):
     """Compare two eval result JSON files.
 
     Reads BASELINE and CANDIDATE JSON files and produces a diff.
     No subprocess calls — purely in-process comparison.
     """
-    base = json.loads(Path(baseline).read_text(encoding="utf-8"))
-    cand = json.loads(Path(candidate).read_text(encoding="utf-8"))
-    emit(_diff(base, cand))
+    base_path = Path(baseline)
+    cand_path = Path(candidate)
+    base = json.loads(base_path.read_text(encoding="utf-8"))
+    cand = json.loads(cand_path.read_text(encoding="utf-8"))
+    diff_data = _diff(base, cand)
+
+    if output_format.lower() == "json":
+        emit(diff_data)
+    else:
+        _print_table(diff_data, base_path.name, cand_path.name)

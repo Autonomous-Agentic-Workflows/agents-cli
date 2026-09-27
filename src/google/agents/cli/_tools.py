@@ -23,7 +23,10 @@ import threading
 from functools import cache
 from pathlib import Path
 
-import click
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import click
 
 _tool_paths: dict[str, str] = {}
 
@@ -51,10 +54,25 @@ DEFAULT_INSTALL_HINTS = {
 }
 
 
-class ToolNotFoundError(click.ClickException):
-    """Raised when a required external tool is not found on PATH."""
+if TYPE_CHECKING:
+    class ToolNotFoundError(click.ClickException):
+        """Raised when a required external tool is not found on PATH."""
 
-    pass
+        pass
+
+
+def __getattr__(name: str):
+    if name == "ToolNotFoundError":
+        import click
+
+        class ToolNotFoundError(click.ClickException):
+            """Raised when a required external tool is not found on PATH."""
+
+            pass
+
+        globals()["ToolNotFoundError"] = ToolNotFoundError
+        return ToolNotFoundError
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 @cache
@@ -172,6 +190,8 @@ def run_npx_skills(args: list[str], spinner_msg: str) -> list[str]:
     """
     from google.agents.cli._runner import popen_resolved
     from google.agents.cli._skills_check import SKILLS_NPX_PACKAGE
+
+    import click
 
     full_args = ["npx", "-y", SKILLS_NPX_PACKAGE, *args]
     click.secho(f"  \u25b8 {shlex.join(full_args)}", fg="cyan", dim=True)

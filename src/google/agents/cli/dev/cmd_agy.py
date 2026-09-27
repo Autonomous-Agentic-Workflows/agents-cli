@@ -30,6 +30,26 @@ VERTEX_ENV = os.path.expanduser("~/setup_enterprise_vertex_env.sh")
 OLLAMA_API = "http://127.0.0.1:11434"
 
 
+def _load_vertex_env(env_dict: dict, filepath: str) -> None:
+    """Safely parse shell export variable definitions without shell execution."""
+    try:
+        with open(filepath, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith("export "):
+                    line = line[7:].strip()
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    key = key.strip()
+                    val = val.strip().strip("'\"")
+                    if key:
+                        env_dict[key] = val
+    except Exception as e:
+        click.echo(f"Warning: Failed to load {filepath}: {e}")
+
+
 @click.group("agy", help="Commands for interacting with the Google Antigravity SDK.")
 def agy():
     """Commands for interacting with the AGY (Antigravity) SDK.
@@ -71,7 +91,7 @@ def bridge():
 
     # Source Vertex env script if it exists
     if os.path.exists(VERTEX_ENV):
-        subprocess.run(f"source {VERTEX_ENV}", shell=True, executable="/bin/bash")
+        _load_vertex_env(env, VERTEX_ENV)
 
     click.echo("Launching AGY bridge with gemini-2.5-flash...")
     click.echo(f"  Venv:    {AGY_VENV}")

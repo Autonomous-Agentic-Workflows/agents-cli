@@ -73,12 +73,24 @@ def test_redact_cmd_case_insensitive_and_extended():
     args_2 = ["python", "-m", "main", "--Api_Key=AIzaSyKey123"]
     assert redact_cmd(args_2) == "python -m main '--Api_Key=[REDACTED]'"
 
-    # Extended options (e.g. password, token, secret)
+    # Extended options (e.g. password, token, secret, auth, bearer-token, pat)
     args_3 = ["deploy", "--password", "supersecretpwd"]
     assert redact_cmd(args_3) == "deploy --password '[REDACTED]'"
 
     args_4 = ["deploy", "--access-token=my-access-token-123"]
     assert redact_cmd(args_4) == "deploy '--access-token=[REDACTED]'"
+
+    args_4_1 = ["curl", "--auth", "user:pass"]
+    assert redact_cmd(args_4_1) == "curl --auth '[REDACTED]'"
+
+    args_4_2 = ["curl", "-H", "Authorization: Bearer mytoken123"]
+    assert redact_cmd(args_4_2) == "curl -H 'Authorization: [REDACTED]'"
+
+    args_4_3 = ["curl", "-H", "X-Api-Key: secret-key-xyz"]
+    assert redact_cmd(args_4_3) == "curl -H 'X-Api-Key: [REDACTED]'"
+
+    args_4_4 = ["deploy", "Bearer", "secret_token_abc"]
+    assert redact_cmd(args_4_4) == "deploy Bearer '[REDACTED]'"
 
     # Case-insensitive env vars (e.g. lowercase)
     args_5 = ["env", "gemini_api_key=AIzaSyKey123", "python"]

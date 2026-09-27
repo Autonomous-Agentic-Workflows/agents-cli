@@ -11,3 +11,7 @@
 ## 2026-03-07 - Cross-Platform Paths in Detached Inline Subprocesses
 **Learning:** When spawning detached Python background processes running inline python code via `python -c "..."` on Windows systems, unescaped backslashes in raw filesystem paths (e.g. from `Path.home()`) cause python compilation `SyntaxError`s when interpolated into strings.
 **Action:** Always convert local filesystem `Path` objects to POSIX-style paths using `.as_posix()` before interpolating them into inline subprocess commands.
+
+## 2026-03-08 - Postponed Evaluation of Annotations for TYPE_CHECKING Lazy Imports
+**Learning:** When moving heavy third-party module imports behind `if TYPE_CHECKING:` to reduce module import overhead, Python evaluates type annotations in function signatures at module load time unless `from __future__ import annotations` is declared at the top of the file. Without `from __future__ import annotations`, references to lazy-imported types in function signatures trigger a `NameError` at runtime during module import.
+**Action:** Always include `from __future__ import annotations` at the top of any module where type annotations rely on types imported under `if TYPE_CHECKING:`.

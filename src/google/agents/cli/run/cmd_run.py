@@ -23,26 +23,15 @@ import mimetypes
 import re
 import uuid
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, TYPE_CHECKING
 from urllib.parse import urlparse
 
 import click
-import httpx
-import requests
-from a2a.client import ClientConfig, ClientFactory
-from a2a.types import (
-    AgentCard,
-    FilePart,
-    FileWithBytes,
-    FileWithUri,
-    Message,
-    Part,
-    Role,
-    TaskArtifactUpdateEvent,
-    TextPart,
-    TransportProtocol,
-)
-from a2a.utils.constants import AGENT_CARD_WELL_KNOWN_PATH
+
+# Lazy-import heavy dependencies (requests, httpx, a2a) inside function calls
+# to defer ~1.1s startup import latency when loading cmd_run or invoking --help.
+if TYPE_CHECKING:
+    from a2a.types import AgentCard, Part
 
 from google.agents.cli._agent_runtime_a2a import (
     build_agent_runtime_a2a_base_url,
@@ -350,21 +339,24 @@ def cmd_run(
             session_id=session_id,
             verbose=verbose,
         )
-    except (
-        requests.ConnectionError,
-        requests.Timeout,
-        httpx.TransportError,
-    ) as exc:
-        if not url:
-            # The local server is unreachable or wedged — stop it (even one we
-            # reused) so a later retry starts a fresh one.
-            should_stop_server = True
-            raise
-        raise click.ClickException(
-            f"Could not reach remote agent at: {url}\n"
-            f"  {exc}\n"
-            "  Check that the URL is correct and the service is running."
-        ) from exc
+    except Exception as exc:
+        import httpx
+        import requests
+
+        if isinstance(
+            exc, (requests.ConnectionError, requests.Timeout, httpx.TransportError)
+        ):
+            if not url:
+                # The local server is unreachable or wedged — stop it (even one we
+                # reused) so a later retry starts a fresh one.
+                should_stop_server = True
+                raise
+            raise click.ClickException(
+                f"Could not reach remote agent at: {url}\n"
+                f"  {exc}\n"
+                "  Check that the URL is correct and the service is running."
+            ) from exc
+        raise
     finally:
         if should_stop_server:
             # cwd is the project root here (set by _resolve_dispatch_target).
@@ -448,6 +440,8 @@ def _dispatch_query(
         URLs, ``/run_sse`` for everything else.
     """
     if mode == "a2a":
+        from a2a.utils.constants import AGENT_CARD_WELL_KNOWN_PATH
+
         if _is_raw_agent_runtime_url(service_url):
             location, runtime_resource = _parse_agent_runtime_service_url(service_url)
             a2a_base = build_agent_runtime_a2a_base_url(
@@ -578,6 +572,8 @@ def _query_adk_sse(
     verbose: bool = False,
 ) -> None:
     """Create a session and stream an SSE response from an ADK FastAPI agent."""
+    import requests
+
     if not session_id:
         # Create a new session
         session_url = f"{service_url}/apps/{app_name}/users/cli-user/sessions"
@@ -638,6 +634,8 @@ def _query_adk_sse(
 def _create_agent_runtime_session(
     service_url: str, headers: dict, user_id: str = "cli-user"
 ) -> str:
+    import requests
+
     resp = requests.post(
         f"{service_url}:query",
         headers=headers,
@@ -671,6 +669,8 @@ def _query_agent_runtime_sse(
     newline-delimited JSON (one JSON object per line).  Creates a session
     via ``async_create_session`` when ``session_id`` is not provided.
     """
+    import requests
+
     if not session_id:
         session_id = _create_agent_runtime_session(service_url, headers)
 
@@ -739,6 +739,9 @@ def _query_a2a(
     verbose: bool = False,
 ) -> None:
     """Fetch an A2A agent card and query the agent."""
+    import httpx
+    from a2a.types import AgentCard
+
     resp = httpx.get(card_url, headers=headers, timeout=30)
     if resp.status_code != 200:
         hint = ""
@@ -773,6 +776,16 @@ async def _query_a2a_async(
     verbose: bool = False,
 ) -> None:
     """Async implementation — sends a message and prints the response."""
+    import httpx
+    from a2a.client import ClientConfig, ClientFactory
+    from a2a.types import (
+        Message,
+        Role,
+        TaskArtifactUpdateEvent,
+        TextPart,
+        TransportProtocol,
+    )
+
     agent_name = agent_card.name or "agent"
 
     # Print user message (text parts only for display)
@@ -844,6 +857,8 @@ async def _query_a2a_async(
 
 def _print_a2a_part(part: Part, artifacts: list[str]) -> None:
     """Print an A2A response part. Appends saved artifact paths to ``artifacts``."""
+    from a2a.types import FilePart, FileWithBytes, FileWithUri, TextPart
+
     root = part.root
     if isinstance(root, TextPart) and root.text:
         click.echo(root.text, nl=False)

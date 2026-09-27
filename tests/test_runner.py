@@ -86,3 +86,23 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_bearer_and_headers():
+    # Bearer token options
+    args_1 = ["curl", "--bearer-token", "eyJhbGciOi...", "http://example.com"]
+    assert redact_cmd(args_1) == "curl --bearer-token '[REDACTED]' http://example.com"
+
+    args_2 = ["curl", "--bearer-token=secret_bearer_token", "http://example.com"]
+    assert redact_cmd(args_2) == "curl '--bearer-token=[REDACTED]' http://example.com"
+
+    # Authorization and X-Api-Key headers
+    args_3 = ["curl", "-H", "Authorization: Bearer secret_bearer_token", "http://example.com"]
+    assert redact_cmd(args_3) == "curl -H 'Authorization: Bearer [REDACTED]' http://example.com"
+
+    args_4 = ["curl", "--header", "X-Api-Key: AIzaSyKey123", "http://example.com"]
+    assert redact_cmd(args_4) == "curl --header 'X-Api-Key: [REDACTED]' http://example.com"
+
+    # Bearer token env var
+    args_5 = ["env", "BEARER_TOKEN=secret_123", "python"]
+    assert redact_cmd(args_5) == "env 'BEARER_TOKEN=[REDACTED]' python"

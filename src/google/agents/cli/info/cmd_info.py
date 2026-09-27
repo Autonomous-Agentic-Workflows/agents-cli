@@ -44,7 +44,9 @@ def _print_installed_skills(
         console.print("Installed skills:   [bold red](could not query)[/bold red]")
         return
     if not skills:
-        console.print("Installed skills:   [bold yellow]none[/bold yellow]")
+        console.print(
+            "Installed skills:   [bold yellow]none[/bold yellow] [dim](run 'agents-cli setup' to install)[/dim]"
+        )
         return
     # Group by scope
     by_scope: dict[str, list[str]] = {}

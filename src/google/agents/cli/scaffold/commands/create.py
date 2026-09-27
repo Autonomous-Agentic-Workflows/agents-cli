@@ -87,11 +87,11 @@ def shared_template_options(f: Callable) -> Callable:
         help="Non-interactive: skip prompts and use defaults",
     )(f)
     f = click.option(
-        "--interactive",
+        "--interactive/--no-interactive",
         "-i",
         is_flag=True,
-        default=False,
-        help="Enable interactive prompts for human use",
+        default=True,
+        help="Enable interactive prompts for human use (default).",
     )(f)
     f = click.option("--debug", is_flag=True, help="Enable debug logging")(f)
     f = click.option(

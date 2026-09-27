@@ -44,14 +44,10 @@ from google.agents.cli.deploy._utils import (
     DEFAULT_MEMORY,
     DEFAULT_MIN_INSTANCES,
     parse_key_value_pairs,
+    parse_secrets,
     read_project_dotenv,
     redact_command,
     resolve_service_name,
-)
-from google.agents.cli.deploy.agent_runtime import (
-    check_agent_runtime_operation,
-    deploy_agent_runtime,
-    parse_secrets,
 )
 from google.agents.cli.scaffold.utils.language import get_project_version
 
@@ -587,6 +583,11 @@ def cmd_deploy(
     #   - Agent Runtime: pass None → FieldMask omits the field → preserves on update
     #   - Cloud Run: apply defaults on create, omit on update (see _shape_flag below)
     if cfg.deployment_target == "agent_runtime":
+        # Performance optimization: lazy-import deploy_agent_runtime only when
+        # executing an Agent Runtime deployment to avoid eagerly loading heavy
+        # vertexai SDK modules during CLI startup or help commands.
+        from google.agents.cli.deploy.agent_runtime import deploy_agent_runtime
+
         if dry_run:
             # Fill defaults FOR DISPLAY ONLY — the real call passes raw (possibly-None)
             # values so Agent Runtime's FieldMask can preserve existing settings on update.
@@ -785,6 +786,12 @@ def _check_deploy_status(
 ) -> None:
     """Check the status of a pending --no-wait deployment."""
     if cfg.deployment_target == "agent_runtime":
+        # Performance optimization: lazy-import check_agent_runtime_operation only
+        # when checking status to avoid eagerly loading heavy vertexai SDK modules.
+        from google.agents.cli.deploy.agent_runtime import (
+            check_agent_runtime_operation,
+        )
+
         check_agent_runtime_operation(
             cfg=cfg,
             project=project,

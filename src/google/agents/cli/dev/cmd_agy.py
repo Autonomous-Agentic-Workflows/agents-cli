@@ -69,9 +69,22 @@ def bridge():
             env["GOOGLE_APPLICATION_CREDENTIALS"] = adc
             break
 
-    # Source Vertex env script if it exists
+    # Safely load environment variables from Vertex env script if it exists
     if os.path.exists(VERTEX_ENV):
-        subprocess.run(f"source {VERTEX_ENV}", shell=True, executable="/bin/bash")
+        try:
+            with open(VERTEX_ENV, "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    stripped = line.strip()
+                    if stripped.startswith("export "):
+                        stripped = stripped[7:].strip()
+                    if "=" in stripped and not stripped.startswith("#"):
+                        key, val = stripped.split("=", 1)
+                        key = key.strip()
+                        val = val.strip().strip("'\"")
+                        if key:
+                            env[key] = val
+        except OSError:
+            pass
 
     click.echo("Launching AGY bridge with gemini-2.5-flash...")
     click.echo(f"  Venv:    {AGY_VENV}")

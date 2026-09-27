@@ -39,11 +39,22 @@ _SENSITIVE_OPTIONS = {
     "--access_token",
     "--auth-token",
     "--auth_token",
+    "--bearer-token",
+    "--bearer_token",
     "--token",
     "--password",
     "--secret",
     "--client-secret",
     "--client_secret",
+    "--auth",
+    "--authorization",
+    "--pat",
+    "--credential",
+    "--credentials",
+    "--private-key",
+    "--private_key",
+    "--service-account-key",
+    "--service_account_key",
 }
 _SENSITIVE_PREFIXES = tuple(opt + "=" for opt in sorted(_SENSITIVE_OPTIONS))
 
@@ -67,13 +78,28 @@ _SENSITIVE_ENV_VARS = (
 def redact_cmd(args: list[str]) -> str:
     """Mask sensitive information in command arguments and return joined string.
 
-    Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
+    Masks arguments like --github-pat, --api-key, --auth, HTTP authorization headers,
+    Bearer tokens, and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
 
     for i, raw_arg in enumerate(args):
         arg = str(raw_arg)
         arg_lower = arg.lower()
+
+        # Check for Authorization: Bearer ... or X-Api-Key: ... header strings
+        if ":" in arg:
+            header_name, sep, header_val = arg.partition(":")
+            hdr_lower = header_name.strip().lower()
+            if hdr_lower in ("authorization", "x-api-key", "api-key", "token", "secret", "x-auth-token"):
+                redacted_cmd_list[i] = f"{header_name}: [REDACTED]"
+                continue
+
+        # Check for standalone "Bearer <token>" string
+        if arg_lower.startswith("bearer ") and len(arg) > 7:
+            redacted_cmd_list[i] = "Bearer [REDACTED]"
+            continue
+
         if arg_lower in _SENSITIVE_OPTIONS and i + 1 < len(args):
             redacted_cmd_list[i + 1] = "[REDACTED]"
         elif arg_lower.startswith(_SENSITIVE_PREFIXES):

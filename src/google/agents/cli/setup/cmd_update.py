@@ -58,4 +58,15 @@ def cmd_update(workspace, yes, interactive):
 
     # Best-effort CLI upgrade
     click.echo()
-    run(["uv", "tool", "upgrade", "google-agents-cli"], check=True)
+    try:
+        res = run(["uv", "tool", "upgrade", "google-agents-cli"], check=False)
+        if res.returncode != 0:
+            click.secho(
+                "  (CLI upgrade check skipped. To upgrade manually: uv tool upgrade google-agents-cli)",
+                dim=True,
+            )
+    except Exception:
+        click.secho(
+            "  (CLI upgrade check skipped. To upgrade manually: uv tool upgrade google-agents-cli)",
+            dim=True,
+        )

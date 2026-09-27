@@ -86,3 +86,24 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_run_npx_skills_redacts_sensitive_args():
+    from unittest.mock import MagicMock, patch
+    from google.agents.cli._tools import run_npx_skills
+
+    mock_proc = MagicMock()
+    mock_proc.stdout = []
+    mock_proc.stderr = MagicMock()
+    mock_proc.stderr.read.return_value = ""
+    mock_proc.returncode = 0
+
+    with patch("click.secho") as mock_secho, patch(
+        "google.agents.cli._runner.popen_resolved", return_value=mock_proc
+    ):
+        run_npx_skills(["add", "my-skill", "--token", "secret_token_abc"], "Installing")
+
+        mock_secho.assert_called()
+        first_call_args = mock_secho.call_args_list[0][0][0]
+        assert "secret_token_abc" not in first_call_args
+        assert "[REDACTED]" in first_call_args

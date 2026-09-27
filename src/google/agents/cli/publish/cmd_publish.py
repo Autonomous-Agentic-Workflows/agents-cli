@@ -1314,11 +1314,11 @@ def _finalize_registration(
     "If not provided, auto-detected from metadata or prompted.",
 )
 @click.option(
-    "--interactive",
+    "--interactive/--no-interactive",
     "-i",
     is_flag=True,
-    default=False,
-    help="Enable interactive prompts for human use.",
+    default=True,
+    help="Enable interactive prompts for human use (default).",
 )
 @click.option(
     "--list",

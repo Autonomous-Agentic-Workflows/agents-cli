@@ -16,7 +16,6 @@
 
 import logging
 import time
-from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 PACKAGE_NAME = "google-agents-cli"
@@ -50,6 +49,9 @@ def _record_update_check() -> None:
 def get_current_version() -> str:
     """Get the current installed version of the package."""
     try:
+        # Lazy import importlib.metadata to speed up CLI startup time
+        from importlib.metadata import PackageNotFoundError, version
+
         return version(PACKAGE_NAME)
     except PackageNotFoundError:
         # Package isn't installed (editable / dev checkout).

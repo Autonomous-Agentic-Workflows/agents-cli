@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib.metadata
 import random
 
 from rich.console import Console
@@ -34,6 +33,8 @@ MOTTOS = [
 def _get_version() -> str:
     """Get the package version, with fallback to 'dev'."""
     try:
+        import importlib.metadata
+
         return importlib.metadata.version("google-agents-cli")
     except Exception:
         return "dev"

@@ -61,4 +61,4 @@ def cmd_login(interactive: bool, status: bool):
     click.echo()
     click.secho("Authentication", fg="cyan", bold=True)
     click.echo()
-    run_auth_step()
+    run_auth_step(show_header=False)

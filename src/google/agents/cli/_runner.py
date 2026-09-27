@@ -39,6 +39,13 @@ _SENSITIVE_OPTIONS = {
     "--access_token",
     "--auth-token",
     "--auth_token",
+    "--bearer-token",
+    "--bearer_token",
+    "--authorization",
+    "--auth",
+    "--pat",
+    "--credential",
+    "--credentials",
     "--token",
     "--password",
     "--secret",
@@ -56,6 +63,9 @@ _SENSITIVE_ENV_VARS = (
     "GOOGLE_API_KEY",
     "ACCESS_TOKEN",
     "AUTH_TOKEN",
+    "BEARER_TOKEN",
+    "API_KEY",
+    "CREDENTIALS",
     "ID_TOKEN",
     "SECRET_KEY",
     "DB_PASSWORD",
@@ -79,6 +89,14 @@ def redact_cmd(args: list[str]) -> str:
         elif arg_lower.startswith(_SENSITIVE_PREFIXES):
             opt_name, value = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
+        elif ":" in arg and any(
+            h in arg_lower
+            for h in ("authorization:", "bearer ", "x-api-key:", "x-auth-token:")
+        ):
+            header_name, _, _ = arg.partition(":")
+            redacted_cmd_list[i] = f"{header_name}: [REDACTED]"
+        elif arg_lower.startswith("bearer "):
+            redacted_cmd_list[i] = "Bearer [REDACTED]"
         elif any(secret in arg.upper() for secret in _SENSITIVE_ENV_VARS):
             if "=" in arg:
                 key, sep, val = arg.partition("=")

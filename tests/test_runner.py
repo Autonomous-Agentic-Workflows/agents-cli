@@ -86,3 +86,27 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_headers_and_bearer_tokens():
+    # Authorization / X-Api-Key headers
+    args_1 = ["curl", "-H", "Authorization: Bearer ya29.secret123", "https://example.com"]
+    assert redact_cmd(args_1) == "curl -H 'Authorization: [REDACTED]' https://example.com"
+
+    args_2 = ["curl", "-H", "X-Api-Key: secret_key_456", "https://example.com"]
+    assert redact_cmd(args_2) == "curl -H 'X-Api-Key: [REDACTED]' https://example.com"
+
+    # Bearer token strings
+    args_3 = ["python", "app.py", "Bearer ya29.secret123"]
+    assert redact_cmd(args_3) == "python app.py 'Bearer [REDACTED]'"
+
+    # Standalone bearer option flag
+    args_4 = ["python", "app.py", "Bearer", "ya29.secret123"]
+    assert redact_cmd(args_4) == "python app.py Bearer '[REDACTED]'"
+
+    # Extended options like --bearer-token, --authorization, --pat, --credential
+    args_5 = ["gcloud", "--bearer-token", "ya29.secret123"]
+    assert redact_cmd(args_5) == "gcloud --bearer-token '[REDACTED]'"
+
+    args_6 = ["gcloud", "--authorization=Bearer ya29.secret123"]
+    assert redact_cmd(args_6) == "gcloud '--authorization=[REDACTED]'"

@@ -55,6 +55,7 @@ from google.agents.cli.deploy._utils import (
     DEFAULT_MEMORY,
     DEFAULT_MIN_INSTANCES,
     parse_key_value_pairs,
+    parse_secrets,
     read_project_dotenv,
     resolve_service_name,
 )
@@ -64,19 +65,6 @@ from google.agents.cli.scaffold.utils.language import get_project_version
 warnings.filterwarnings(
     "ignore", category=FutureWarning, module="google.cloud.aiplatform"
 )
-
-
-def parse_secrets(secrets_string: str | None) -> dict[str, dict[str, str]]:
-    """Parse secrets from ENV_VAR=SECRET_ID or ENV_VAR=SECRET_ID:VERSION format."""
-    raw = parse_key_value_pairs(secrets_string)
-    result: dict[str, dict[str, str]] = {}
-    for key, spec in raw.items():
-        if ":" not in spec:
-            secret_id, version = spec, "latest"
-        else:
-            secret_id, _, version = spec.rpartition(":")
-        result[key] = {"secret": secret_id, "version": version}
-    return result
 
 
 def format_env_value(value: Any) -> str:

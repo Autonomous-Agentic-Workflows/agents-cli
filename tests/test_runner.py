@@ -86,3 +86,35 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_auth_headers_and_bearer_tokens():
+    # HTTP Authorization and X-Api-Key headers
+    args_1 = ["curl", "-H", "Authorization: Bearer secret_token_abc"]
+    assert redact_cmd(args_1) == "curl -H 'Authorization: [REDACTED]'"
+
+    args_2 = ["curl", "-H", "X-Api-Key: secret_key_123"]
+    assert redact_cmd(args_2) == "curl -H 'X-Api-Key: [REDACTED]'"
+
+    # Standalone Bearer token string or separate args
+    args_3 = ["curl", "Bearer ya29.secret_token"]
+    assert redact_cmd(args_3) == "curl 'Bearer [REDACTED]'"
+
+    args_4 = ["curl", "bearer", "ya29.secret_token"]
+    assert redact_cmd(args_4) == "curl bearer '[REDACTED]'"
+
+    # Additional sensitive options (--authorization, --auth, --bearer-token, --pat, --credential)
+    args_5 = ["app", "--authorization", "Bearer xyz"]
+    assert redact_cmd(args_5) == "app --authorization '[REDACTED]'"
+
+    args_6 = ["app", "--auth=secret"]
+    assert redact_cmd(args_6) == "app '--auth=[REDACTED]'"
+
+    args_7 = ["app", "--bearer-token", "token123"]
+    assert redact_cmd(args_7) == "app --bearer-token '[REDACTED]'"
+
+    args_8 = ["app", "--pat", "pat123"]
+    assert redact_cmd(args_8) == "app --pat '[REDACTED]'"
+
+    args_9 = ["app", "--credential=cred123"]
+    assert redact_cmd(args_9) == "app '--credential=[REDACTED]'"

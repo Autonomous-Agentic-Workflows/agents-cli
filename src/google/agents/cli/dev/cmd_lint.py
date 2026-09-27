@@ -81,3 +81,9 @@ def cmd_lint(fix, mypy, skip_codespell, skip_ty):
             ["uv", "run", "mypy", "."],
             check_err_msg="Mypy check failed",
         )
+
+    click.echo()
+    if fix:
+        click.secho("✓ Code formatting and linting completed.", fg="green")
+    else:
+        click.secho("✓ All code quality checks passed!", fg="green")

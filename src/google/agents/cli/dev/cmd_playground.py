@@ -45,7 +45,15 @@ _console = Console()
     default=False,
     help="Export traces to Google Cloud Trace.",
 )
-def cmd_playground(port, host, reload_agents, trace_to_cloud):
+@click.option(
+    "--open",
+    "-o",
+    "open_browser",
+    is_flag=True,
+    default=False,
+    help="Automatically open the playground URL in the default web browser.",
+)
+def cmd_playground(port, host, reload_agents, trace_to_cloud, open_browser):
     """Start the local agent playground."""
     chdir_project_root()
     cfg = read_project_config()
@@ -79,11 +87,15 @@ def cmd_playground(port, host, reload_agents, trace_to_cloud):
     if trace_to_cloud:
         args.append("--trace_to_cloud")
 
-    _print_banner(url, args)
+    _print_banner(url, args, open_browser=open_browser)
+    if open_browser:
+        import webbrowser
+
+        webbrowser.open(url)
     run(args, print_cmd=False, check_err_msg="Failed to start playground")
 
 
-def _print_banner(url: str, cmd_args: list[str]) -> None:
+def _print_banner(url: str, cmd_args: list[str], open_browser: bool = False) -> None:
     """Print a styled banner with a clickable URL pointing at the agent."""
     cmd_str = shlex.join(cmd_args)
     body = (
@@ -92,4 +104,6 @@ def _print_banner(url: str, cmd_args: list[str]) -> None:
         f"[bold]Running command:[/]       {cmd_str}\n"
         f"[bold]Will be available at:[/]  [green underline]{url}[/]"
     )
+    if open_browser:
+        body += "\n[dim]Opening in default browser...[/dim]"
     _console.print(Panel(body, border_style="cyan"))

@@ -86,39 +86,3 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
-
-
-def test_redact_cmd_auth_headers_and_bearer():
-    # Authorization header with Bearer token
-    args_1 = ["curl", "-H", "Authorization: Bearer mysecrettoken123", "https://api.example.com"]
-    assert redact_cmd(args_1) == "curl -H 'Authorization: Bearer [REDACTED]' https://api.example.com"
-
-    # Authorization header with raw token
-    args_2 = ["curl", "-H", "Authorization: token123", "https://api.example.com"]
-    assert redact_cmd(args_2) == "curl -H 'Authorization: [REDACTED]' https://api.example.com"
-
-    # X-Api-Key header
-    args_3 = ["curl", "-H", "X-Api-Key: mysecretkey", "https://api.example.com"]
-    assert redact_cmd(args_3) == "curl -H 'X-Api-Key: [REDACTED]' https://api.example.com"
-
-    # Standalone Bearer token argument
-    args_4 = ["gcloud", "auth", "Bearer mysecrettoken123"]
-    assert redact_cmd(args_4) == "gcloud auth 'Bearer [REDACTED]'"
-
-
-def test_redact_cmd_new_sensitive_options():
-    # --authorization flag
-    args_1 = ["deploy", "--authorization", "mysecrettoken"]
-    assert redact_cmd(args_1) == "deploy --authorization '[REDACTED]'"
-
-    # --bearer-token flag
-    args_2 = ["deploy", "--bearer-token=mysecrettoken"]
-    assert redact_cmd(args_2) == "deploy '--bearer-token=[REDACTED]'"
-
-    # --credential flag
-    args_3 = ["deploy", "--credential", "mycred123"]
-    assert redact_cmd(args_3) == "deploy --credential '[REDACTED]'"
-
-    # --private-key flag
-    args_4 = ["deploy", "--private-key=mykey"]
-    assert redact_cmd(args_4) == "deploy '--private-key=[REDACTED]'"

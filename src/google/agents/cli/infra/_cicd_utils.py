@@ -17,6 +17,7 @@
 import json
 import os
 import re
+import shlex
 import subprocess
 import time
 from dataclasses import dataclass
@@ -27,7 +28,7 @@ import backoff
 import click
 from rich.prompt import IntPrompt, Prompt
 
-from google.agents.cli._runner import popen_resolved, redact_cmd, run_resolved
+from google.agents.cli._runner import popen_resolved, run_resolved
 
 
 def setup_git_provider(non_interactive: bool = False) -> str:
@@ -368,8 +369,8 @@ def run_command(
     env_vars: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess:
     """Run a command with backoff retries for CI/CD operations."""
-    # Format command for display with sensitive values redacted
-    cmd_str = redact_cmd(cmd)
+    # Format command for display exactly like the old version
+    cmd_str = shlex.join(cmd)
     click.echo(f"\n🔄 Running command: {cmd_str}")
     if cwd:
         click.echo(f"📂 In directory: {cwd}")

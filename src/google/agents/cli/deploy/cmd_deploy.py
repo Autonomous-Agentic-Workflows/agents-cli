@@ -21,9 +21,7 @@ import sys
 import time
 from pathlib import Path
 
-import backoff
 import click
-import requests
 
 from google.agents.cli import _tools
 from google.agents.cli._project import (
@@ -64,6 +62,8 @@ def _cloud_run_service_exists(*, project: str, region: str, service: str) -> boo
     rather than `gcloud run services describe` to avoid ~2s of gcloud startup and
     the run_v2 dependency, mirroring the REST pattern in publish/cmd_publish.py.
     """
+    import requests
+
     url = (
         f"https://{region}-run.googleapis.com/v2/projects/{project}"
         f"/locations/{region}/services/{service}"
@@ -209,20 +209,6 @@ class _TransientCloudRunDeployError(click.ClickException):
     """
 
 
-@backoff.on_exception(
-    backoff.expo,
-    _TransientCloudRunDeployError,
-    max_tries=_CLOUD_RUN_DEPLOY_MAX_TRIES,
-    max_time=_CLOUD_RUN_DEPLOY_MAX_TIME,
-    jitter=backoff.full_jitter,
-    on_backoff=lambda details: logging.warning(
-        "Cloud Run deploy hit a transient IAM-propagation error; retrying in "
-        "%.0fs (attempt %d/%d)...",
-        details["wait"],
-        details["tries"] + 1,  # the upcoming attempt; details['tries'] = ones done
-        _CLOUD_RUN_DEPLOY_MAX_TRIES,
-    ),
-)
 def _run_cloud_run_deploy_with_retry(args: list[str], *, project: str | None) -> None:
     """Run ``gcloud run deploy``, streaming output, retrying transient IAM errors.
 
@@ -233,39 +219,58 @@ def _run_cloud_run_deploy_with_retry(args: list[str], *, project: str | None) ->
         failures, which backoff retries.
       * ``click.ClickException`` for all other failures, which fail fast.
     """
-    process = popen_resolved(args, stderr=subprocess.PIPE, text=True)
+    import backoff
 
-    assert process.stderr is not None
-    stderr_chars = []
-    while True:
-        char = process.stderr.read(1)
-        if not char:
-            break
-        sys.stderr.write(char)
-        sys.stderr.flush()
-        stderr_chars.append(char)
-
-    process.wait()
-
-    if process.returncode == 0:
-        return
-
-    stderr = "".join(stderr_chars)
-    if "SERVICE_DISABLED" in stderr:
-        raise click.ClickException(
-            "Cloud Run or Cloud Build API is not enabled.\n"
-            "Please enable them by running:\n"
-            f"  gcloud services enable cloudbuild.googleapis.com run.googleapis.com --project={project}"
-        )
-    if any(sig in stderr for sig in _CLOUD_RUN_TRANSIENT_DEPLOY_SIGNATURES):
-        raise _TransientCloudRunDeployError(
-            "Cloud Run deployment failed due to a transient IAM-propagation error "
-            f"(exit code {process.returncode}). This usually clears within a few "
-            "minutes after a project, repository, or service is first created."
-        )
-    raise click.ClickException(
-        f"Cloud Run deployment failed (exit code {process.returncode})"
+    @backoff.on_exception(
+        backoff.expo,
+        _TransientCloudRunDeployError,
+        max_tries=_CLOUD_RUN_DEPLOY_MAX_TRIES,
+        max_time=_CLOUD_RUN_DEPLOY_MAX_TIME,
+        jitter=backoff.full_jitter,
+        on_backoff=lambda details: logging.warning(
+            "Cloud Run deploy hit a transient IAM-propagation error; retrying in "
+            "%.0fs (attempt %d/%d)...",
+            details["wait"],
+            details["tries"] + 1,  # the upcoming attempt; details['tries'] = ones done
+            _CLOUD_RUN_DEPLOY_MAX_TRIES,
+        ),
     )
+    def _deploy() -> None:
+        process = popen_resolved(args, stderr=subprocess.PIPE, text=True)
+
+        assert process.stderr is not None
+        stderr_chars = []
+        while True:
+            char = process.stderr.read(1)
+            if not char:
+                break
+            sys.stderr.write(char)
+            sys.stderr.flush()
+            stderr_chars.append(char)
+
+        process.wait()
+
+        if process.returncode == 0:
+            return
+
+        stderr = "".join(stderr_chars)
+        if "SERVICE_DISABLED" in stderr:
+            raise click.ClickException(
+                "Cloud Run or Cloud Build API is not enabled.\n"
+                "Please enable them by running:\n"
+                f"  gcloud services enable cloudbuild.googleapis.com run.googleapis.com --project={project}"
+            )
+        if any(sig in stderr for sig in _CLOUD_RUN_TRANSIENT_DEPLOY_SIGNATURES):
+            raise _TransientCloudRunDeployError(
+                "Cloud Run deployment failed due to a transient IAM-propagation error "
+                f"(exit code {process.returncode}). This usually clears within a few "
+                "minutes after a project, repository, or service is first created."
+            )
+        raise click.ClickException(
+            f"Cloud Run deployment failed (exit code {process.returncode})"
+        )
+
+    _deploy()
 
 
 @click.command("deploy")

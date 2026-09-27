@@ -91,3 +91,31 @@ def test_run_auth_step_menu_formatting():
                 call.args[0] if call.args else "" for call in mock_echo.call_args_list
             ]
             assert "  Choose an authentication method:" in printed_texts
+
+
+def test_setup_pause_prompt_styling():
+    """Verify that _setup_gemini_api_key and _setup_express_mode style the pause prompt in cyan and bold."""
+    import click
+    from google.agents.cli.auth import _setup_express_mode, _setup_gemini_api_key
+
+    expected_prompt = click.style(
+        "  Press Enter to open the browser...", fg="cyan", bold=True
+    )
+
+    with patch("os.environ.get", return_value=None):
+        with (
+            patch("click.pause") as mock_pause,
+            patch("webbrowser.open"),
+            patch("google.agents.cli.auth._api_key_instructions"),
+        ):
+            _setup_gemini_api_key()
+            mock_pause.assert_called_once_with(expected_prompt)
+
+    with patch("os.environ.get", return_value=None):
+        with (
+            patch("click.pause") as mock_pause,
+            patch("webbrowser.open"),
+            patch("google.agents.cli.auth._api_key_instructions"),
+        ):
+            _setup_express_mode()
+            mock_pause.assert_called_once_with(expected_prompt)

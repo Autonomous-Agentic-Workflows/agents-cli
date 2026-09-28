@@ -21,9 +21,13 @@ import sys
 import time
 from pathlib import Path
 
-import backoff
+from typing import TYPE_CHECKING
+
 import click
-import requests
+
+if TYPE_CHECKING:
+    import backoff
+    import requests
 
 from google.agents.cli import _tools
 from google.agents.cli._project import (
@@ -64,6 +68,8 @@ def _cloud_run_service_exists(*, project: str, region: str, service: str) -> boo
     rather than `gcloud run services describe` to avoid ~2s of gcloud startup and
     the run_v2 dependency, mirroring the REST pattern in publish/cmd_publish.py.
     """
+    import requests
+
     url = (
         f"https://{region}-run.googleapis.com/v2/projects/{project}"
         f"/locations/{region}/services/{service}"
@@ -209,20 +215,6 @@ class _TransientCloudRunDeployError(click.ClickException):
     """
 
 
-@backoff.on_exception(
-    backoff.expo,
-    _TransientCloudRunDeployError,
-    max_tries=_CLOUD_RUN_DEPLOY_MAX_TRIES,
-    max_time=_CLOUD_RUN_DEPLOY_MAX_TIME,
-    jitter=backoff.full_jitter,
-    on_backoff=lambda details: logging.warning(
-        "Cloud Run deploy hit a transient IAM-propagation error; retrying in "
-        "%.0fs (attempt %d/%d)...",
-        details["wait"],
-        details["tries"] + 1,  # the upcoming attempt; details['tries'] = ones done
-        _CLOUD_RUN_DEPLOY_MAX_TRIES,
-    ),
-)
 def _run_cloud_run_deploy_with_retry(args: list[str], *, project: str | None) -> None:
     """Run ``gcloud run deploy``, streaming output, retrying transient IAM errors.
 
@@ -266,6 +258,30 @@ def _run_cloud_run_deploy_with_retry(args: list[str], *, project: str | None) ->
     raise click.ClickException(
         f"Cloud Run deployment failed (exit code {process.returncode})"
     )
+
+
+def _run_cloud_run_deploy_with_retry_wrapper(args: list[str], *, project: str | None) -> None:
+    """Wrap _run_cloud_run_deploy_with_retry with backoff retries (lazily imported)."""
+    import backoff
+
+    @backoff.on_exception(
+        backoff.expo,
+        _TransientCloudRunDeployError,
+        max_tries=_CLOUD_RUN_DEPLOY_MAX_TRIES,
+        max_time=_CLOUD_RUN_DEPLOY_MAX_TIME,
+        jitter=backoff.full_jitter,
+        on_backoff=lambda details: logging.warning(
+            "Cloud Run deploy hit a transient IAM-propagation error; retrying in "
+            "%.0fs (attempt %d/%d)...",
+            details["wait"],
+            details["tries"] + 1,  # the upcoming attempt; details['tries'] = ones done
+            _CLOUD_RUN_DEPLOY_MAX_TRIES,
+        ),
+    )
+    def _retryable_deploy():
+        return _run_cloud_run_deploy_with_retry(args, project=project)
+
+    return _retryable_deploy()
 
 
 @click.command("deploy")
@@ -745,7 +761,7 @@ def cmd_deploy(
             return
         click.secho(f"  ▸ {display_cmd}", fg="cyan", dim=True)
 
-        _run_cloud_run_deploy_with_retry(args, project=project)
+        _run_cloud_run_deploy_with_retry_wrapper(args, project=project)
 
     elif cfg.deployment_target == "gke":
         if no_wait:

@@ -16,6 +16,7 @@
 
 import io
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -44,6 +45,16 @@ _SENSITIVE_OPTIONS = {
     "--secret",
     "--client-secret",
     "--client_secret",
+    "--authorization",
+    "--auth",
+    "--bearer-token",
+    "--bearer_token",
+    "--bearer",
+    "--pat",
+    "--credential",
+    "--credentials",
+    "--private-key",
+    "--private_key",
 }
 _SENSITIVE_PREFIXES = tuple(opt + "=" for opt in sorted(_SENSITIVE_OPTIONS))
 
@@ -57,28 +68,44 @@ _SENSITIVE_ENV_VARS = (
     "ACCESS_TOKEN",
     "AUTH_TOKEN",
     "ID_TOKEN",
+    "BEARER_TOKEN",
+    "PRIVATE_KEY",
+    "CREDENTIALS",
     "SECRET_KEY",
     "DB_PASSWORD",
     "DB_PASS",
     "PASSWORD",
 )
 
+_HEADER_AUTH_RE = re.compile(
+    r"^(authorization|x-api-key|x-auth-token):\s*\S+.*$", re.IGNORECASE
+)
+_BEARER_RE = re.compile(r"^bearer\s+\S+$", re.IGNORECASE)
+
 
 def redact_cmd(args: list[str]) -> str:
     """Mask sensitive information in command arguments and return joined string.
 
-    Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
+    Masks arguments like --github-pat, --api-key, --api_key, HTTP authorization
+    headers, Bearer tokens, and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
 
     for i, raw_arg in enumerate(args):
         arg = str(raw_arg)
+        if redacted_cmd_list[i] != arg:
+            continue
         arg_lower = arg.lower()
         if arg_lower in _SENSITIVE_OPTIONS and i + 1 < len(args):
             redacted_cmd_list[i + 1] = "[REDACTED]"
         elif arg_lower.startswith(_SENSITIVE_PREFIXES):
             opt_name, value = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
+        elif _HEADER_AUTH_RE.match(arg):
+            header_name = arg.split(":", 1)[0]
+            redacted_cmd_list[i] = f"{header_name}: [REDACTED]"
+        elif _BEARER_RE.match(arg):
+            redacted_cmd_list[i] = "Bearer [REDACTED]"
         elif any(secret in arg.upper() for secret in _SENSITIVE_ENV_VARS):
             if "=" in arg:
                 key, sep, val = arg.partition("=")

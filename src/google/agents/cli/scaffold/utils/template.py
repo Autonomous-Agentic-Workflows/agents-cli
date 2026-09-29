@@ -26,7 +26,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 import yaml
-from cookiecutter.main import cookiecutter
 from rich.console import Console
 from rich.prompt import Confirm, IntPrompt
 
@@ -1305,6 +1304,9 @@ def process_template(
 
             logging.debug(f"Template structure created at {cookiecutter_template}")
             logging.debug(f"Directory contents: {list(cookiecutter_template.iterdir())}")
+
+            # Defer heavy cookiecutter import until template processing
+            from cookiecutter.main import cookiecutter
 
             # Process the template
             cookiecutter(

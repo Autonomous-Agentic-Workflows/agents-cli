@@ -11,3 +11,7 @@
 ## 2026-03-07 - Cross-Platform Paths in Detached Inline Subprocesses
 **Learning:** When spawning detached Python background processes running inline python code via `python -c "..."` on Windows systems, unescaped backslashes in raw filesystem paths (e.g. from `Path.home()`) cause python compilation `SyntaxError`s when interpolated into strings.
 **Action:** Always convert local filesystem `Path` objects to POSIX-style paths using `.as_posix()` before interpolating them into inline subprocess commands.
+
+## 2026-03-08 - Deferring Templating Engine Imports in CLI Scaffolding Utilities
+**Learning:** Eagerly importing `cookiecutter` at top-level in scaffolding modules loads transitive dependencies (such as jinja2, binaryornot, markupsafe) costing ~300ms on import time. Deferring `cookiecutter` to function scope inside `process_template()` keeps utility module loading fast.
+**Action:** Defer heavy templating libraries in scaffolding modules until template processing is invoked.

@@ -44,6 +44,12 @@ _SENSITIVE_OPTIONS = {
     "--secret",
     "--client-secret",
     "--client_secret",
+    "--authorization",
+    "--auth",
+    "--bearer-token",
+    "--bearer_token",
+    "--pat",
+    "--credential",
 }
 _SENSITIVE_PREFIXES = tuple(opt + "=" for opt in sorted(_SENSITIVE_OPTIONS))
 
@@ -79,6 +85,15 @@ def redact_cmd(args: list[str]) -> str:
         elif arg_lower.startswith(_SENSITIVE_PREFIXES):
             opt_name, value = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
+        elif any(
+            header in arg_lower
+            for header in ("authorization:", "x-api-key:", "bearer ")
+        ):
+            if ":" in arg:
+                hdr_name, sep, val = arg.partition(":")
+                redacted_cmd_list[i] = f"{hdr_name}: [REDACTED]"
+            else:
+                redacted_cmd_list[i] = "[REDACTED]"
         elif any(secret in arg.upper() for secret in _SENSITIVE_ENV_VARS):
             if "=" in arg:
                 key, sep, val = arg.partition("=")

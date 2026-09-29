@@ -524,8 +524,9 @@ def cmd_deploy(
                 "    • Skip the prompt:       --no-confirm-project\n"
                 "    • Run interactively:     -i"
             )
+        styled_project = click.style(project, fg="cyan", bold=True)
         if not click.confirm(
-            f"Deploying to Google Cloud project '{project}'. Proceed?", default=True
+            f"Deploying to Google Cloud project '{styled_project}'. Proceed?", default=True
         ):
             raise click.ClickException("Aborted by user.")
 

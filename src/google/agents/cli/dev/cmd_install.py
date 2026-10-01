@@ -45,6 +45,7 @@ def cmd_install(clean: bool, locked: bool):
     if locked:
         cmd.append("--locked")
     run(cmd, check_err_msg="Failed to install dependencies")
+    click.secho("✓ Dependencies installed successfully.", fg="green", bold=True)
 
 
 def _delete_venv():
@@ -62,5 +63,6 @@ def _delete_venv():
 
     try:
         shutil.rmtree(venv_path)
+        click.secho("✓ Cleaned existing virtual environment (.venv).", fg="cyan", bold=True)
     except Exception as e:
         logging.warning(f"Failed to remove venv: {e}")

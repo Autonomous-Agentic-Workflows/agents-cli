@@ -69,28 +69,41 @@ def redact_cmd(args: list[str]) -> str:
 
     Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
     """
-    redacted_cmd_list = list(args)
+    # Convert all arguments to strings once upfront to avoid redundant str() conversions
+    # and per-element list allocations when passing to shlex.join.
+    redacted_cmd_list = [str(a) for a in args]
+    skip_next = False
 
-    for i, raw_arg in enumerate(args):
-        arg = str(raw_arg)
+    for i, arg in enumerate(redacted_cmd_list):
+        if skip_next:
+            skip_next = False
+            continue
+
         arg_lower = arg.lower()
-        if arg_lower in _SENSITIVE_OPTIONS and i + 1 < len(args):
-            redacted_cmd_list[i + 1] = "[REDACTED]"
+        if arg_lower in _SENSITIVE_OPTIONS:
+            if i + 1 < len(redacted_cmd_list):
+                redacted_cmd_list[i + 1] = "[REDACTED]"
+                skip_next = True
         elif arg_lower.startswith(_SENSITIVE_PREFIXES):
-            opt_name, value = arg.split("=", 1)
+            opt_name, _ = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
-        elif any(secret in arg.upper() for secret in _SENSITIVE_ENV_VARS):
-            if "=" in arg:
-                key, sep, val = arg.partition("=")
-                if any(secret in key.upper() for secret in _SENSITIVE_ENV_VARS):
-                    redacted_cmd_list[i] = f"{key}=[REDACTED]"
-                else:
-                    redacted_cmd_list[i] = "[REDACTED]"
-            else:
-                redacted_cmd_list[i] = "[REDACTED]"
+        else:
+            arg_upper = arg.upper()
+            # Early break on first matching secret to avoid redundant checks over _SENSITIVE_ENV_VARS
+            for secret in _SENSITIVE_ENV_VARS:
+                if secret in arg_upper:
+                    if "=" in arg:
+                        key, _, _ = arg.partition("=")
+                        key_upper = key.upper()
+                        if any(s in key_upper for s in _SENSITIVE_ENV_VARS):
+                            redacted_cmd_list[i] = f"{key}=[REDACTED]"
+                        else:
+                            redacted_cmd_list[i] = "[REDACTED]"
+                    else:
+                        redacted_cmd_list[i] = "[REDACTED]"
+                    break
 
-    # Make sure we convert everything to string for shlex.join
-    return shlex.join(str(a) for a in redacted_cmd_list)
+    return shlex.join(redacted_cmd_list)
 
 
 def run(

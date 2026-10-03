@@ -15,11 +15,6 @@
 """Tool resolution utilities."""
 
 import os
-import re
-import shlex
-import shutil
-import subprocess
-import threading
 from functools import cache
 from pathlib import Path
 
@@ -27,12 +22,22 @@ import click
 
 _tool_paths: dict[str, str] = {}
 
-# Matches ANSI escape sequences (CSI/SGR), used to scrub any residual color
-# codes from captured subprocess output. We disable color at the source via
-# NO_COLOR/FORCE_COLOR, but strip defensively in case the tool emits them anyway
-# (e.g. on Windows PowerShell, where embedded escapes have caused error lines
-# to render as the previous line's color — see b/525049570).
-_ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[a-zA-Z]")
+_ansi_re_compiled = None
+
+
+def _get_ansi_re():
+    """Lazily compile and return the ANSI escape sequence pattern."""
+    global _ansi_re_compiled
+    if _ansi_re_compiled is None:
+        import re
+
+        # Matches ANSI escape sequences (CSI/SGR), used to scrub any residual color
+        # codes from captured subprocess output. We disable color at the source via
+        # NO_COLOR/FORCE_COLOR, but strip defensively in case the tool emits them anyway
+        # (e.g. on Windows PowerShell, where embedded escapes have caused error lines
+        # to render as the previous line's color — see b/525049570).
+        _ansi_re_compiled = re.compile(r"\x1b\[[0-9;?]*[a-zA-Z]")
+    return _ansi_re_compiled
 
 _GCLOUD_RELATIVE_PATH = (
     Path("Google") / "Cloud SDK" / "google-cloud-sdk" / "bin" / "gcloud.cmd"
@@ -129,6 +134,8 @@ def require_tool(name: str, install_hint: str = "") -> str:
     if name in _tool_paths:
         return _tool_paths[name]
 
+    import shutil
+
     path = shutil.which(name)
 
     if path is None and _is_windows():
@@ -170,6 +177,10 @@ def run_npx_skills(args: list[str], spinner_msg: str) -> list[str]:
         click.ClickException: If the npx process exits non-zero, or if any
             per-skill failures were observed in the streamed output.
     """
+    import shlex
+    import subprocess
+    import threading
+
     from google.agents.cli._runner import popen_resolved
     from google.agents.cli._skills_check import SKILLS_NPX_PACKAGE
 
@@ -214,7 +225,7 @@ def run_npx_skills(args: list[str], spinner_msg: str) -> list[str]:
     for line in proc.stdout:
         # Defensively strip any leaked ANSI escape sequences so we control how
         # the line renders.
-        stripped = _ANSI_RE.sub("", line).strip()
+        stripped = _get_ansi_re().sub("", line).strip()
         if not stripped:
             continue
         # Skip npx download/cache noise

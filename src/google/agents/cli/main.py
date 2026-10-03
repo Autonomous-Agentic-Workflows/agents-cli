@@ -22,7 +22,6 @@ its specific --help). See `LazyGroup` in `_click.py`.
 import io
 import os
 import sys
-import traceback
 
 import click
 
@@ -69,6 +68,8 @@ class _MainGroup(LazyGroup):
             Console().print("Operation cancelled by user", style="yellow")
             ctx.exit(130)
         except Exception:
+            import traceback
+
             click.echo(f"agents-cli v{__version__}", err=True)
             _print_is_project_moved_tip()
             traceback.print_exc()

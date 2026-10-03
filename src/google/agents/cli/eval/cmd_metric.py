@@ -41,6 +41,10 @@ def list_metrics():
     metric_names = sorted(metric_names_set)
 
     console = Console()
+    if not metric_names:
+        console.print("[yellow]No predefined metrics found.[/yellow]")
+        return
+
     table = Table(
         title="Available Built-in Evaluation Metrics",
         show_header=True,
@@ -53,7 +57,11 @@ def list_metrics():
 
     console.print()
     console.print(table)
-    console.print()
+    console.print(f"[dim]Total: {len(metric_names)} metrics available.[/dim]")
+    console.print(
+        "\n[dim]Tip: Pass any of these metrics to "
+        "[cyan]agents-cli eval grade --metrics <NAME>[/cyan][/dim]\n"
+    )
 
 
 metric_group.add_lazy_command(

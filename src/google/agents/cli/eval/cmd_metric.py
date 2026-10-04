@@ -41,6 +41,10 @@ def list_metrics():
     metric_names = sorted(metric_names_set)
 
     console = Console()
+    if not metric_names:
+        console.print("[yellow]No built-in evaluation metrics found.[/yellow]")
+        return
+
     table = Table(
         title="Available Built-in Evaluation Metrics",
         show_header=True,
@@ -53,6 +57,12 @@ def list_metrics():
 
     console.print()
     console.print(table)
+    console.print(
+        f"Total metrics available: [bold cyan]{len(metric_names)}[/bold cyan]"
+    )
+    console.print(
+        "[dim]Pass any metric name to [bold cyan]agents-cli eval grade --metrics <NAME>[/bold cyan][/dim]"
+    )
     console.print()
 
 

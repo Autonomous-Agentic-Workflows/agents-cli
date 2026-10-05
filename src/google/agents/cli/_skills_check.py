@@ -244,10 +244,14 @@ def check_skills_version() -> None:
     if not mismatched:
         return
 
-    lines = [f"  - {name} (v{ver})" for name, ver in mismatched.items()]
-    click.echo(
+    header = click.style(
         f"\n⚠️  Skills version mismatch — CLI is v{__version__}, "
-        f"but {len(mismatched)} skill(s) differ:\n"
-        + "\n".join(lines)
-        + "\n   Run 'agents-cli update' to sync.\n"
+        f"but {len(mismatched)} skill(s) differ:",
+        fg="yellow",
     )
+    lines = [
+        click.style(f"  - {name} (v{ver})", dim=True)
+        for name, ver in mismatched.items()
+    ]
+    action = click.style("   Run 'agents-cli update' to sync.\n", fg="yellow")
+    click.echo("\n".join([header, *lines, action]))

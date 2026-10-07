@@ -44,6 +44,13 @@ _SENSITIVE_OPTIONS = {
     "--secret",
     "--client-secret",
     "--client_secret",
+    "--authorization",
+    "--auth",
+    "--bearer-token",
+    "--bearer_token",
+    "--pat",
+    "--credential",
+    "--credentials",
 }
 _SENSITIVE_PREFIXES = tuple(opt + "=" for opt in sorted(_SENSITIVE_OPTIONS))
 
@@ -61,6 +68,10 @@ _SENSITIVE_ENV_VARS = (
     "DB_PASSWORD",
     "DB_PASS",
     "PASSWORD",
+    "BEARER_TOKEN",
+    "API_KEY",
+    "CREDENTIALS",
+    "PRIVATE_KEY",
 )
 
 
@@ -79,6 +90,11 @@ def redact_cmd(args: list[str]) -> str:
         elif arg_lower.startswith(_SENSITIVE_PREFIXES):
             opt_name, value = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
+        elif arg_lower.startswith("authorization:") or arg_lower.startswith("x-api-key:"):
+            header_name, _ = arg.split(":", 1)
+            redacted_cmd_list[i] = f"{header_name}: [REDACTED]"
+        elif arg_lower.startswith("bearer "):
+            redacted_cmd_list[i] = "Bearer [REDACTED]"
         elif any(secret in arg.upper() for secret in _SENSITIVE_ENV_VARS):
             if "=" in arg:
                 key, sep, val = arg.partition("=")

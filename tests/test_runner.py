@@ -86,3 +86,36 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_headers_bearer_and_credentials():
+    # Authorization and X-Api-Key headers
+    args_1 = ["curl", "-H", "Authorization: Bearer my_secret_token", "http://localhost"]
+    assert redact_cmd(args_1) == "curl -H 'Authorization: [REDACTED]' http://localhost"
+
+    args_2 = ["curl", "-H", "X-Api-Key: secret_12345", "http://localhost"]
+    assert redact_cmd(args_2) == "curl -H 'X-Api-Key: [REDACTED]' http://localhost"
+
+    # Standalone Bearer token
+    args_3 = ["curl", "-H", "Bearer eyJhbGciOi...", "http://localhost"]
+    assert redact_cmd(args_3) == "curl -H 'Bearer [REDACTED]' http://localhost"
+
+    # Additional sensitive options
+    args_4 = ["deploy", "--auth", "secret_auth_token"]
+    assert redact_cmd(args_4) == "deploy --auth '[REDACTED]'"
+
+    args_5 = ["deploy", "--bearer-token=secret_bearer"]
+    assert redact_cmd(args_5) == "deploy '--bearer-token=[REDACTED]'"
+
+    args_6 = ["deploy", "--pat", "ghp_123456789"]
+    assert redact_cmd(args_6) == "deploy --pat '[REDACTED]'"
+
+    args_7 = ["deploy", "--credentials", "path/to/creds.json"]
+    assert redact_cmd(args_7) == "deploy --credentials '[REDACTED]'"
+
+    # Additional sensitive env vars
+    args_8 = ["env", "BEARER_TOKEN=my_bearer_token", "python"]
+    assert redact_cmd(args_8) == "env 'BEARER_TOKEN=[REDACTED]' python"
+
+    args_9 = ["env", "PRIVATE_KEY=-----BEGIN...", "python"]
+    assert redact_cmd(args_9) == "env 'PRIVATE_KEY=[REDACTED]' python"

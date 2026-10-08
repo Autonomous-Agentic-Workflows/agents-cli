@@ -19,19 +19,24 @@ import inspect
 from google.agents.cli.eval import cmd_analyze, cmd_dataset, cmd_generate
 
 
+def _get_fn_source(func):
+    fn = getattr(func, "callback", func)
+    return inspect.getsource(fn)
+
+
 def test_eval_analyze_completion_format():
     """Verify cmd_analyze includes bold green checkmark in completion message."""
-    src = inspect.getsource(cmd_analyze.cmd_analyze.callback)
+    src = _get_fn_source(cmd_analyze.cmd_analyze)
     assert "[bold green]✓ Detailed analysis results saved to:[/bold green]" in src
 
 
 def test_eval_dataset_completion_format():
     """Verify cmd_synthesize includes bold green checkmark in completion message."""
-    src = inspect.getsource(cmd_dataset.cmd_synthesize.callback)
+    src = _get_fn_source(cmd_dataset.cmd_synthesize)
     assert "[bold green]✓ Traces saved to:[/bold green]" in src
 
 
 def test_eval_generate_completion_format():
     """Verify cmd_generate includes bold green checkmark in completion message."""
-    src = inspect.getsource(cmd_generate.cmd_generate.callback)
+    src = _get_fn_source(cmd_generate.cmd_generate)
     assert "[bold green]✓ Traces saved to:[/bold green]" in src

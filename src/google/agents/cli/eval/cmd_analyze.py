@@ -23,10 +23,6 @@ import traceback
 from pathlib import Path
 
 import click
-import vertexai
-from rich.console import Console
-from rich.table import Table
-from vertexai._genai import _evals_visualization
 
 from google.agents.cli._project import (
     chdir_project_root,
@@ -94,6 +90,13 @@ def cmd_analyze(
     project: str | None,
 ):
     """[Experimental] Analyze failure clusters from an evaluation run result JSON file. Results are always saved to a file."""
+    # Defer heavy imports (vertexai, rich) inside function body to eliminate
+    # ~6.6s module loading overhead on startup or command discovery.
+    import vertexai
+    from rich.console import Console
+    from rich.table import Table
+    from vertexai._genai import _evals_visualization
+
     logging.warning("`eval analyze` is experimental and may change.")
     if metric and not _ALLOWED_METRICS_PATTERN.match(metric):
         raise click.ClickException(

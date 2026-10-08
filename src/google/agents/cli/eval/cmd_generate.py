@@ -243,4 +243,4 @@ def cmd_generate(
                     f"{script_path}: {exc}"
                 )
 
-    console.print(f"[bold green]Traces saved to:[/bold green] {output_path}")
+    console.print(f"[bold green]✓ Traces saved to:[/bold green] {output_path}")

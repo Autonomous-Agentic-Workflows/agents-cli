@@ -19,11 +19,7 @@ import os
 from pathlib import Path
 
 import click
-import vertexai
 from rich.console import Console
-from vertexai._genai.types.common import (
-    EvaluationDataset,
-)
 
 import google.agents.cli._project as _project
 from google.agents.cli.eval import _paths
@@ -47,6 +43,9 @@ def _load_traces_eval_cases(traces_path: str) -> tuple[list, int]:
 
     if not json_files:
         raise click.ClickException(f"No JSON trace files found at: {traces_path}")
+
+    # Defer heavy vertexai import until function call to optimize CLI module import latency
+    from vertexai._genai.types.common import EvaluationDataset
 
     all_eval_cases = []
     for filepath in json_files:
@@ -175,6 +174,10 @@ def cmd_grade(
     console.print(
         f"Running evaluation for metrics: [cyan]{', '.join(metric_names)}[/cyan]..."
     )
+
+    # Defer heavy vertexai import until command execution (~5s overhead)
+    import vertexai
+    from vertexai._genai.types.common import EvaluationDataset
 
     merged_dataset = EvaluationDataset(eval_cases=all_eval_cases)
 

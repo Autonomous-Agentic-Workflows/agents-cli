@@ -19,7 +19,6 @@ import re
 import click
 from rich.console import Console
 from rich.table import Table
-from vertexai._genai._evals_constant import SUPPORTED_PREDEFINED_METRICS
 
 from google.agents.cli._click import LazyGroup
 
@@ -33,6 +32,9 @@ def metric_group():
 @click.command("list")
 def list_metrics():
     """List available out-of-the-box (OOTB) evaluation metrics."""
+    # Defer heavy vertexai import until command execution to improve startup latency (~5s overhead)
+    from vertexai._genai._evals_constant import SUPPORTED_PREDEFINED_METRICS
+
     metric_names_set = set()
     for name in SUPPORTED_PREDEFINED_METRICS:
         base_name = re.sub(r"_v\d+$", "", name)

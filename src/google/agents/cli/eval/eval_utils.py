@@ -324,7 +324,7 @@ def save_evaluation_artifacts(
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(dumpable, f, indent=2)
         console.print(
-            f"[green]Saved full results to {os.path.abspath(json_path)}[/green]"
+            f"[bold green]✓ Saved full results to:[/bold green] {os.path.abspath(json_path)}"
         )
     except Exception as dump_err:
         raise click.ClickException("Failed to dump full results to json.") from dump_err
@@ -337,7 +337,7 @@ def save_evaluation_artifacts(
             with open(html_path, "w", encoding="utf-8") as f:
                 f.write(str(html_content))
             console.print(
-                f"[green]Saved HTML results to {os.path.abspath(html_path)}[/green]"
+                f"[bold green]✓ Saved HTML results to:[/bold green] {os.path.abspath(html_path)}"
             )
         else:
             console.print(

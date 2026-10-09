@@ -216,4 +216,4 @@ def cmd_analyze(
         console.print(table)
         console.print()
 
-    console.print(f"Detailed analysis results saved to [green]{output_path}[/green]")
+    console.print(f"[bold green]✓ Detailed analysis results saved to:[/bold green] {output_path}")

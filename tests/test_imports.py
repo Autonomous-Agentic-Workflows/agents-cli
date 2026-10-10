@@ -59,3 +59,24 @@ print("OK")
         text=True,
     )
     assert result.returncode == 0, f"Import check failed: {result.stdout}\n{result.stderr}"
+
+
+def test_eval_grade_no_heavy_eager_imports():
+    """Verify that importing google.agents.cli.eval.cmd_grade does not eagerly load vertexai or cloud SDKs."""
+    code = """
+import sys
+import google.agents.cli.eval.cmd_grade
+
+heavy_modules = ["vertexai", "google.cloud.aiplatform", "google.genai", "pandas"]
+loaded = [m for m in heavy_modules if any(k == m or k.startswith(m + ".") for k in sys.modules)]
+if loaded:
+    print(f"Error: Heavy modules loaded eagerly on import of cmd_grade: {loaded}")
+    sys.exit(1)
+print("OK")
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"Import check failed: {result.stdout}\n{result.stderr}"

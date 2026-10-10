@@ -21,6 +21,7 @@ from a2a.types import FilePart, FileWithUri, Part
 from google.agents.cli.run.cmd_run import (
     _print_a2a_part,
     _print_author_tag,
+    _print_session_id,
     _print_sse_part,
 )
 
@@ -77,3 +78,23 @@ def test_print_a2a_part_file_color():
         mock_secho.assert_called_once_with(
             "\n[file: https://example.com/file.pdf]", fg="cyan", nl=False
         )
+
+
+def test_print_session_id_color():
+    with patch("click.secho") as mock_secho, patch("click.echo") as mock_echo:
+        _print_session_id("sess-12345")
+        mock_echo.assert_called_once()
+        assert mock_secho.call_count == 3
+        mock_secho.assert_any_call("Session: ", dim=True, nl=False)
+        mock_secho.assert_any_call("sess-12345", fg="cyan")
+        mock_secho.assert_any_call(
+            '  Resume with: agents-cli run "<message>" --session-id sess-12345',
+            dim=True,
+        )
+
+
+def test_print_session_id_none():
+    with patch("click.secho") as mock_secho, patch("click.echo") as mock_echo:
+        _print_session_id(None)
+        mock_echo.assert_not_called()
+        mock_secho.assert_not_called()

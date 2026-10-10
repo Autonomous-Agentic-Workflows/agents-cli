@@ -71,7 +71,19 @@ def bridge():
 
     # Source Vertex env script if it exists
     if os.path.exists(VERTEX_ENV):
-        subprocess.run(f"source {VERTEX_ENV}", shell=True, executable="/bin/bash")
+        try:
+            res = subprocess.run(
+                ["/bin/bash", "-c", 'source "$1" && env', "_", VERTEX_ENV],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            for line in res.stdout.splitlines():
+                if "=" in line:
+                    k, _, v = line.partition("=")
+                    env[k] = v
+        except subprocess.SubprocessError as e:
+            click.echo(f"Warning: Failed to source {VERTEX_ENV}: {e}")
 
     click.echo("Launching AGY bridge with gemini-2.5-flash...")
     click.echo(f"  Venv:    {AGY_VENV}")

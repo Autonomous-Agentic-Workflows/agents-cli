@@ -492,7 +492,8 @@ def _print_session_id(session_id: str | None) -> None:
     if not session_id:
         return
     click.echo()
-    click.secho(f"Session: {session_id}", dim=True)
+    click.secho("Session: ", dim=True, nl=False)
+    click.secho(session_id, fg="cyan")
     click.secho(
         f'  Resume with: agents-cli run "<message>" --session-id {session_id}',
         dim=True,

@@ -14,19 +14,21 @@
 
 """Shared utility functions for agents-cli eval commands."""
 
+from __future__ import annotations
+
 import datetime
 import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Literal, get_args
+from typing import TYPE_CHECKING, Any, Literal, get_args
 
 import click
-import vertexai._genai.types.common as vertex_types
 import yaml
 from rich.console import Console
-from vertexai._genai import _evals_visualization
-from vertexai._genai._evals_constant import SUPPORTED_PREDEFINED_METRICS
+
+if TYPE_CHECKING:
+    import vertexai._genai.types.common as vertex_types
 
 Execution = Literal["local", "remote"]
 
@@ -195,6 +197,9 @@ def prepare_eval_metrics(
         raise click.ClickException(f"Configuration file not found at {config_path}.")
 
     if custom_metrics_pool and console:
+        # Lazy import heavy Vertex AI constant to reduce import latency
+        from vertexai._genai._evals_constant import SUPPORTED_PREDEFINED_METRICS
+
         predefined_names = set(SUPPORTED_PREDEFINED_METRICS)
         for p_name in SUPPORTED_PREDEFINED_METRICS:
             base = re.sub(r"_v\d+$", "", p_name)
@@ -204,6 +209,9 @@ def prepare_eval_metrics(
             console.print(
                 f"[bold yellow]Warning:[/bold yellow] Custom metric [cyan]{', '.join(sorted(overlapping))}[/cyan] shares name with a built-in evaluation metric. The custom definition will override the built-in metric."
             )
+
+    # Lazy import heavy Vertex AI types module for metric construction
+    import vertexai._genai.types.common as vertex_types
 
     requested_metrics = []
     if metrics_str:
@@ -298,6 +306,9 @@ def save_evaluation_artifacts(
     result: vertex_types.EvaluationResult, output_dir: str, console: Console
 ) -> None:
     """Creates the artifacts directory and saves JSON/HTML results."""
+    # Lazy import heavy Vertex AI visualization helper
+    from vertexai._genai import _evals_visualization
+
     os.makedirs(output_dir, exist_ok=True)
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

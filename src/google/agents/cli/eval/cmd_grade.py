@@ -19,11 +19,7 @@ import os
 from pathlib import Path
 
 import click
-import vertexai
 from rich.console import Console
-from vertexai._genai.types.common import (
-    EvaluationDataset,
-)
 
 import google.agents.cli._project as _project
 from google.agents.cli.eval import _paths
@@ -40,6 +36,9 @@ _DEFAULT_EVAL_CONFIG_PATH = os.path.join("tests", "eval", "eval_config.yaml")
 
 def _load_traces_eval_cases(traces_path: str) -> tuple[list, int]:
     """Load and merge evaluation cases from one or more populated trace JSON files."""
+    # Lazy import EvaluationDataset to avoid heavy vertexai loading on module import
+    from vertexai._genai.types.common import EvaluationDataset
+
     if os.path.isfile(traces_path):
         json_files = [traces_path]
     else:
@@ -115,6 +114,10 @@ def cmd_grade(
     region: str | None = None,
 ) -> None:
     """Score populated agent traces against one or more metrics."""
+    # Lazy import heavy Vertex AI dependencies when command is invoked
+    import vertexai
+    from vertexai._genai.types.common import EvaluationDataset
+
     console = Console()
     project_root = _project.find_project_root()
     # Load the project's .env (same approach as the eval runners) so local,

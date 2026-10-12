@@ -18,8 +18,6 @@ import pathlib
 from pathlib import Path
 from typing import NamedTuple
 
-import yaml
-
 
 class AgentConfig(NamedTuple):
     """Configuration for an agent template."""
@@ -48,6 +46,8 @@ def get_agent_configs(
         agents_dir = _scaffold_root() / "agents"
 
     agent_configs = {}
+
+    import yaml
 
     for agent_dir in agents_dir.iterdir():
         if not agent_dir.is_dir():

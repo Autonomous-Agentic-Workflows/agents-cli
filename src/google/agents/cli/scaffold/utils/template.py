@@ -25,8 +25,6 @@ import tempfile
 from datetime import UTC, datetime
 from typing import Any
 
-import yaml
-from cookiecutter.main import cookiecutter
 from rich.console import Console
 from rich.prompt import Confirm, IntPrompt
 
@@ -392,6 +390,8 @@ def get_available_agents(
         deployment_target: Optional deployment target to filter agents
         include_hidden: If True, include agents marked as hidden in templateconfig
     """
+    import yaml
+
     # Define display order for agents within each group
     PRIORITY_ORDER = {
         "adk": 0,
@@ -478,6 +478,8 @@ def load_template_config(template_dir: pathlib.Path) -> dict[str, Any]:
         return {}
 
     try:
+        import yaml
+
         with open(config_file, encoding="utf-8") as f:
             config = yaml.safe_load(f)
             return config if config else {}
@@ -1305,6 +1307,8 @@ def process_template(
 
             logging.debug(f"Template structure created at {cookiecutter_template}")
             logging.debug(f"Directory contents: {list(cookiecutter_template.iterdir())}")
+
+            from cookiecutter.main import cookiecutter
 
             # Process the template
             cookiecutter(

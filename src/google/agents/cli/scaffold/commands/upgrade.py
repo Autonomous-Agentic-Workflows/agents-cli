@@ -73,11 +73,11 @@ def _display_version_header(old_version: str, new_version: str) -> None:
     help="Auto-apply non-conflicting changes without prompts",
 )
 @click.option(
-    "--interactive",
+    "--interactive/--no-interactive",
     "-i",
     is_flag=True,
-    default=False,
-    help="Enable interactive prompts for human use",
+    default=True,
+    help="Enable/disable interactive prompts for human use",
 )
 @click.option(
     "--debug",
@@ -95,7 +95,7 @@ def upgrade(
 
     Applies a 3-way merge between the old template, the new template, and your
     project: unmodified files are auto-updated, your customizations are preserved,
-    and conflicts are surfaced for manual resolution (with --interactive) or kept as-is.
+    and conflicts are surfaced for manual resolution or kept as-is (with --no-interactive).
     """
     if debug:
         logging.basicConfig(level=logging.DEBUG, force=True)

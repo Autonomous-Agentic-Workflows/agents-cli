@@ -26,8 +26,6 @@ import logging
 import os
 import warnings
 from pathlib import Path
-from typing import Any
-
 from typing import TYPE_CHECKING, Any
 
 import click

@@ -211,6 +211,7 @@ def display_results(
     groups: dict[str, list[FileCompareResult]],
     dep_changes: list[DependencyChange] | None = None,
     dry_run: bool = False,
+    interactive: bool = False,
 ) -> None:
     """Display the comparison results grouped by action."""
     if dep_changes is None:
@@ -257,7 +258,14 @@ def display_results(
         for result in groups["conflict"]:
             console.print(f"  [red]⚠[/red]  {result.path}")
         if not dry_run:
-            console.print("[dim]  You'll be prompted to resolve each conflict.[/dim]")
+            if interactive:
+                console.print(
+                    "[dim]  You'll be prompted to resolve each conflict.[/dim]"
+                )
+            else:
+                console.print(
+                    "[dim]  Keeping your version for conflicts. Pass --interactive (-i) to resolve interactively.[/dim]"
+                )
         console.print()
 
     if dep_changes:
@@ -578,7 +586,9 @@ def run_three_way_merge(
         console.print()
 
         # ── Display ──────────────────────────────────────────────────
-        display_results(groups, dep_result.changes if dep_result else [], dry_run)
+        display_results(
+            groups, dep_result.changes if dep_result else [], dry_run, interactive
+        )
 
         total_changes = (
             len(groups["auto_update"])

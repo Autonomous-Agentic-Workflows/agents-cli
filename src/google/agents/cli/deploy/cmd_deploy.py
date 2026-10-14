@@ -391,11 +391,11 @@ def _run_cloud_run_deploy_with_retry(args: list[str], *, project: str | None) ->
     help="Check the status of a pending --no-wait deployment.",
 )
 @click.option(
-    "--interactive",
+    "--interactive/--no-interactive",
     "-i",
     is_flag=True,
-    default=False,
-    help="Enable interactive prompts for underlying tooling (gcloud, etc).",
+    default=True,
+    help="Enable interactive prompts (default).",
 )
 @click.option(
     "--no-confirm-project",

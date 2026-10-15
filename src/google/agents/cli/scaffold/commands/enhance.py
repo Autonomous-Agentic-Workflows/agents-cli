@@ -1076,7 +1076,7 @@ def enhance(
         console.print()
 
         if not click.confirm(
-            f"Continue with enhancement? {click.style('[Y/n]: ', fg='blue', bold=True)}",
+            f"Continue with enhancement? {click.style('[Y/n]', fg='blue', bold=True)}",
             default=True,
             show_default=False,
         ):
@@ -1275,8 +1275,9 @@ def enhance(
 
             if interactive:
                 if not click.confirm(
-                    f"Continue with enhancement despite missing /{final_agent_directory} folder?",
+                    f"Continue with enhancement despite missing /{final_agent_directory} folder? {click.style('[Y/n]', fg='blue', bold=True)}",
                     default=True,
+                    show_default=False,
                 ):
                     console.print("✋ [yellow]Enhancement cancelled.[/yellow]")
                     return
@@ -1333,8 +1334,9 @@ def enhance(
                     console.print()
                     if interactive:
                         if not click.confirm(
-                            f"Continue enhancement? (You can add '{required_var}' later)",
+                            f"Continue enhancement? (You can add '{required_var}' later) {click.style('[Y/n]', fg='blue', bold=True)}",
                             default=True,
+                            show_default=False,
                         ):
                             console.print("✋ [yellow]Enhancement cancelled.[/yellow]")
                             return
@@ -1354,8 +1356,9 @@ def enhance(
                 console.print()
                 if interactive:
                     if not click.confirm(
-                        f"Continue enhancement? (An example {expected_file} will be created for you)",
+                        f"Continue enhancement? (An example {expected_file} will be created for you) {click.style('[Y/n]', fg='blue', bold=True)}",
                         default=True,
+                        show_default=False,
                     ):
                         console.print("✋ [yellow]Enhancement cancelled.[/yellow]")
                         return

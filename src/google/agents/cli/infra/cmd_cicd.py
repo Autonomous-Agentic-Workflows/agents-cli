@@ -598,14 +598,14 @@ def setup_cicd(
     # secrets, GCS backend) are created before terraform plan runs.
     if interactive:
         if apply_changes:
-            confirm_msg = "\nDo you want to continue with the setup?"
+            confirm_msg = f"\nDo you want to continue with the setup? {click.style('[Y/n]', fg='blue', bold=True)}"
         else:
             confirm_msg = (
                 "\nThis will configure prerequisites (GitHub connection, "
                 "secrets, Terraform backend) before running terraform plan.\n"
-                "Do you want to continue with the preview?"
+                f"Do you want to continue with the preview? {click.style('[Y/n]', fg='blue', bold=True)}"
             )
-        if not click.confirm(confirm_msg, default=True):
+        if not click.confirm(confirm_msg, default=True, show_default=False):
             console.print("\n🛑 Setup cancelled by user", style="bold yellow")
             return
 

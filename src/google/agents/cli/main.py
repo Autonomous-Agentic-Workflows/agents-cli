@@ -22,14 +22,11 @@ its specific --help). See `LazyGroup` in `_click.py`.
 import io
 import os
 import sys
-import traceback
 
 import click
 
 from google.agents.cli import _tools
-from google.agents.cli.__init__ import __version__
 from google.agents.cli._click import LazyGroup, patch_source_in_help
-from google.agents.cli._project import is_project_moved
 
 # Force utf-8 encoding and non-exception fallback for printing
 if isinstance(sys.stdout, io.TextIOWrapper):
@@ -39,15 +36,18 @@ if isinstance(sys.stderr, io.TextIOWrapper):
 
 
 def _print_is_project_moved_tip() -> None:
-    message = (
-        "\n💡 Tip: It looks like the project folder may have been moved or renamed."
-        " Try running `agents-cli install --clean` to reset the environment, then"
-        " re-run your original command"
-    )
+    # Deferred import to reduce CLI startup import latency
+    from google.agents.cli._project import is_project_moved
+
     if is_project_moved():
         from rich.console import Console
 
-        Console().print(message, style="cyan")
+        Console().print(
+            "\n💡 Tip: It looks like the project folder may have been moved or renamed."
+            " Try running `agents-cli install --clean` to reset the environment, then"
+            " re-run your original command",
+            style="cyan",
+        )
 
 
 class _MainGroup(LazyGroup):
@@ -59,16 +59,23 @@ class _MainGroup(LazyGroup):
         except click.exceptions.Exit:
             raise
         except click.ClickException:
+            from google.agents.cli import __version__
+
             click.echo(f"agents-cli v{__version__}", err=True)
             _print_is_project_moved_tip()
             raise
         except KeyboardInterrupt:
             from rich.console import Console
+            from google.agents.cli import __version__
 
             Console().print(f"\nagents-cli v{__version__}", style="dim")
             Console().print("Operation cancelled by user", style="yellow")
             ctx.exit(130)
         except Exception:
+            import traceback
+
+            from google.agents.cli import __version__
+
             click.echo(f"agents-cli v{__version__}", err=True)
             _print_is_project_moved_tip()
             traceback.print_exc()
@@ -76,7 +83,7 @@ class _MainGroup(LazyGroup):
 
 
 @click.group(cls=_MainGroup)
-@click.version_option(version=__version__, prog_name="agents-cli")
+@click.version_option(package_name="google-agents-cli", prog_name="agents-cli")
 def main():
     """Agents CLI — Agent Development Lifecycle toolchain.
 

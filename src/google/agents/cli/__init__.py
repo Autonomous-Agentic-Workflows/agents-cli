@@ -14,9 +14,21 @@
 
 """Agents CLI — Agent Development Lifecycle toolchain."""
 
-import importlib.metadata
+from typing import TYPE_CHECKING
 
-try:
-    __version__ = importlib.metadata.version("google-agents-cli")
-except importlib.metadata.PackageNotFoundError:
-    __version__ = "0.0.0-dev"
+if TYPE_CHECKING:
+    __version__: str
+
+
+def __getattr__(name: str) -> str:
+    if name == "__version__":
+        # Lazy-import importlib.metadata to avoid ~35-80ms import latency on CLI startup
+        import importlib.metadata
+
+        try:
+            version = importlib.metadata.version("google-agents-cli")
+        except importlib.metadata.PackageNotFoundError:
+            version = "0.0.0-dev"
+        globals()["__version__"] = version
+        return version
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

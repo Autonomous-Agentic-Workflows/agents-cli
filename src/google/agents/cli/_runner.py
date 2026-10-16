@@ -39,11 +39,16 @@ _SENSITIVE_OPTIONS = {
     "--access_token",
     "--auth-token",
     "--auth_token",
+    "--bearer-token",
+    "--bearer_token",
     "--token",
     "--password",
     "--secret",
     "--client-secret",
     "--client_secret",
+    "--pat",
+    "--credential",
+    "--credentials",
 }
 _SENSITIVE_PREFIXES = tuple(opt + "=" for opt in sorted(_SENSITIVE_OPTIONS))
 
@@ -56,11 +61,14 @@ _SENSITIVE_ENV_VARS = (
     "GOOGLE_API_KEY",
     "ACCESS_TOKEN",
     "AUTH_TOKEN",
+    "BEARER_TOKEN",
     "ID_TOKEN",
     "SECRET_KEY",
     "DB_PASSWORD",
     "DB_PASS",
     "PASSWORD",
+    "PAT",
+    "CREDENTIAL",
 )
 
 

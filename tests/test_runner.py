@@ -86,3 +86,26 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_authorization_headers_and_tokens():
+    # Authorization options and flags
+    args_1 = ["curl", "--bearer-token", "ya29.secret123"]
+    assert redact_cmd(args_1) == "curl --bearer-token '[REDACTED]'"
+
+    args_2 = ["python", "app.py", "--pat=ghp_secret456"]
+    assert redact_cmd(args_2) == "python app.py '--pat=[REDACTED]'"
+
+    args_3 = ["cli", "--credential", "secret_cred"]
+    assert redact_cmd(args_3) == "cli --credential '[REDACTED]'"
+
+    # Authorization and API key headers
+    args_4 = ["curl", "-H", "Authorization: Bearer ya29.secret123"]
+    assert redact_cmd(args_4) == "curl -H 'Authorization: Bearer [REDACTED]'"
+
+    args_5 = ["curl", "-H", "X-Api-Key: secret_api_key_789"]
+    assert redact_cmd(args_5) == "curl -H 'X-Api-Key: [REDACTED]'"
+
+    # Standalone Bearer tokens
+    args_6 = ["curl", "-H", "Bearer ya29.secret123"]
+    assert redact_cmd(args_6) == "curl -H 'Bearer [REDACTED]'"

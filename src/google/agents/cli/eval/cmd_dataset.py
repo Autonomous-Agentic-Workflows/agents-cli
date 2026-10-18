@@ -241,7 +241,7 @@ def cmd_synthesize(
                     f"{script_path}: {exc}"
                 )
 
-    console.print(f"[bold green]Traces saved to:[/bold green] {output_path}")
+    console.print(f"[bold green]✓ Traces saved to:[/bold green] {output_path}")
 
 
 dataset_group.add_lazy_command(

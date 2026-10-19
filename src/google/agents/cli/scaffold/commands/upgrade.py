@@ -73,10 +73,10 @@ def _display_version_header(old_version: str, new_version: str) -> None:
     help="Auto-apply non-conflicting changes without prompts",
 )
 @click.option(
-    "--interactive",
+    "--interactive/--no-interactive",
     "-i",
     is_flag=True,
-    default=False,
+    default=True,
     help="Enable interactive prompts for human use",
 )
 @click.option(

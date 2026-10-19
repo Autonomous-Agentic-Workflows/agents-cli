@@ -40,6 +40,50 @@ print("OK")
     assert result.returncode == 0, f"Import check failed: {result.stdout}\n{result.stderr}"
 
 
+def test_deploy_modules_no_heavy_eager_imports():
+    """Verify that importing deploy modules does not eagerly load heavy dependencies."""
+    code = """
+import sys
+import google.agents.cli.deploy.cmd_deploy
+import google.agents.cli.deploy.agent_runtime
+
+heavy_modules = ["vertexai", "requests", "backoff", "pathspec"]
+loaded = [m for m in heavy_modules if any(k == m or k.startswith(m + ".") for k in sys.modules)]
+if loaded:
+    print(f"Error: Heavy modules loaded eagerly on import: {loaded}")
+    sys.exit(1)
+print("OK")
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"Import check failed: {result.stdout}\n{result.stderr}"
+
+
+def test_eval_modules_no_heavy_eager_imports():
+    """Verify that importing eval modules does not eagerly load heavy dependencies."""
+    code = """
+import sys
+import google.agents.cli.eval.eval_utils
+import google.agents.cli.eval.cmd_grade
+
+heavy_modules = ["vertexai", "yaml"]
+loaded = [m for m in heavy_modules if any(k == m or k.startswith(m + ".") for k in sys.modules)]
+if loaded:
+    print(f"Error: Heavy modules loaded eagerly on import: {loaded}")
+    sys.exit(1)
+print("OK")
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"Import check failed: {result.stdout}\n{result.stderr}"
+
+
 def test_agent_runtime_a2a_no_heavy_eager_imports():
     """Verify that importing google.agents.cli._agent_runtime_a2a does not eagerly load a2a."""
     code = """

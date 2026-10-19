@@ -69,9 +69,21 @@ def bridge():
             env["GOOGLE_APPLICATION_CREDENTIALS"] = adc
             break
 
-    # Source Vertex env script if it exists
+    # Source Vertex env script if it exists without shell=True command injection risk
     if os.path.exists(VERTEX_ENV):
-        subprocess.run(f"source {VERTEX_ENV}", shell=True, executable="/bin/bash")
+        try:
+            res = subprocess.run(
+                ["/bin/bash", "-c", 'source "$1" && env', "_", VERTEX_ENV],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            for line in res.stdout.splitlines():
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    env[key] = val
+        except Exception as e:
+            click.echo(f"Warning: Could not source {VERTEX_ENV}: {e}")
 
     click.echo("Launching AGY bridge with gemini-2.5-flash...")
     click.echo(f"  Venv:    {AGY_VENV}")

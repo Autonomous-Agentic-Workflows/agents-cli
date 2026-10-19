@@ -14,19 +14,21 @@
 
 """Shared utility functions for agents-cli eval commands."""
 
+from __future__ import annotations
+
 import datetime
 import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Literal, get_args
+from typing import TYPE_CHECKING, Any, Literal, get_args
 
 import click
-import vertexai._genai.types.common as vertex_types
-import yaml
-from rich.console import Console
-from vertexai._genai import _evals_visualization
-from vertexai._genai._evals_constant import SUPPORTED_PREDEFINED_METRICS
+
+if TYPE_CHECKING:
+    import vertexai._genai.types.common as vertex_types
+    import yaml
+    from rich.console import Console
 
 Execution = Literal["local", "remote"]
 
@@ -125,6 +127,8 @@ def load_eval_config(config_path: str) -> tuple[list[str], dict]:
 
         file_extension = os.path.splitext(config_path)[1].lower()
         if file_extension in [".yaml", ".yml"]:
+            import yaml
+
             data = yaml.safe_load(content_str)
         elif file_extension == ".json":
             data = json.loads(content_str)
@@ -173,7 +177,7 @@ def prepare_eval_metrics(
     metrics_str: str | None,
     default_config_path: str | None = None,
     default_metrics: list[str] | None = None,
-    console: Console | None = None,
+    console: Any | None = None,
 ) -> tuple[list[Any], int, int]:
     """Loads configuration and resolves/validates metrics to evaluate.
 
@@ -184,6 +188,9 @@ def prepare_eval_metrics(
         ``remote_custom_count`` is the number that will run server-side
         via ``CodeExecutionMetric``.
     """
+    import vertexai._genai.types.common as vertex_types
+    from vertexai._genai._evals_constant import SUPPORTED_PREDEFINED_METRICS
+
     custom_metrics_pool = {}
     metrics_to_run_list = []
 
@@ -295,9 +302,11 @@ def print_results_table(result: vertex_types.EvaluationResult, console: Console)
 
 
 def save_evaluation_artifacts(
-    result: vertex_types.EvaluationResult, output_dir: str, console: Console
+    result: Any, output_dir: str, console: Any
 ) -> None:
     """Creates the artifacts directory and saves JSON/HTML results."""
+    from vertexai._genai import _evals_visualization
+
     os.makedirs(output_dir, exist_ok=True)
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

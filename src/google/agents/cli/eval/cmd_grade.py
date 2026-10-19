@@ -17,13 +17,14 @@
 import glob
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
-import vertexai
 from rich.console import Console
-from vertexai._genai.types.common import (
-    EvaluationDataset,
-)
+
+if TYPE_CHECKING:
+    import vertexai
+    from vertexai._genai.types.common import EvaluationDataset
 
 import google.agents.cli._project as _project
 from google.agents.cli.eval import _paths
@@ -40,6 +41,8 @@ _DEFAULT_EVAL_CONFIG_PATH = os.path.join("tests", "eval", "eval_config.yaml")
 
 def _load_traces_eval_cases(traces_path: str) -> tuple[list, int]:
     """Load and merge evaluation cases from one or more populated trace JSON files."""
+    from vertexai._genai.types.common import EvaluationDataset
+
     if os.path.isfile(traces_path):
         json_files = [traces_path]
     else:
@@ -176,11 +179,15 @@ def cmd_grade(
         f"Running evaluation for metrics: [cyan]{', '.join(metric_names)}[/cyan]..."
     )
 
+    from vertexai._genai.types.common import EvaluationDataset
+
     merged_dataset = EvaluationDataset(eval_cases=all_eval_cases)
 
     needs_gcp = len(metrics) > local_custom_count
 
     try:
+        import vertexai
+
         if needs_gcp:
             resolved_project = _project.resolve_gcp_project(project, required=True)
             resolved_region = resolve_eval_region(region)

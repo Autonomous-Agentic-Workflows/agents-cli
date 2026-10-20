@@ -28,6 +28,13 @@ from google.agents.cli import _tools
 # Pre-defined sensitive options and prefixes for fast O(1) membership lookup
 # and zero per-invocation allocation overhead in redact_cmd.
 _SENSITIVE_OPTIONS = {
+    "--authorization",
+    "--auth",
+    "--bearer-token",
+    "--bearer_token",
+    "--pat",
+    "--credential",
+    "--credentials",
     "--github-pat",
     "--github_pat",
     "--github-token",
@@ -63,15 +70,25 @@ _SENSITIVE_ENV_VARS = (
     "PASSWORD",
 )
 
+_SENSITIVE_HEADERS = {
+    "authorization",
+    "x-api-key",
+    "x-goog-api-key",
+    "api-key",
+    "proxy-authorization",
+}
+
 
 def redact_cmd(args: list[str]) -> str:
     """Mask sensitive information in command arguments and return joined string.
 
-    Masks arguments like --github-pat, --api-key, --api_key and environment variables containing secrets.
+    Masks arguments like --github-pat, --api-key, --authorization, HTTP auth headers, and environment variables containing secrets.
     """
     redacted_cmd_list = list(args)
 
     for i, raw_arg in enumerate(args):
+        if redacted_cmd_list[i] == "[REDACTED]":
+            continue
         arg = str(raw_arg)
         arg_lower = arg.lower()
         if arg_lower in _SENSITIVE_OPTIONS and i + 1 < len(args):
@@ -79,6 +96,12 @@ def redact_cmd(args: list[str]) -> str:
         elif arg_lower.startswith(_SENSITIVE_PREFIXES):
             opt_name, value = arg.split("=", 1)
             redacted_cmd_list[i] = f"{opt_name}=[REDACTED]"
+        elif arg_lower.startswith("bearer "):
+            redacted_cmd_list[i] = "Bearer [REDACTED]"
+        elif ":" in arg and not arg_lower.startswith(("http://", "https://")):
+            key, sep, _ = arg.partition(":")
+            if key.strip().lower() in _SENSITIVE_HEADERS:
+                redacted_cmd_list[i] = f"{key}: [REDACTED]"
         elif any(secret in arg.upper() for secret in _SENSITIVE_ENV_VARS):
             if "=" in arg:
                 key, sep, val = arg.partition("=")

@@ -25,10 +25,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import click
-import requests
-from packaging import version
 from rich.console import Console
-from rich.table import Table
 
 from google.agents.cli._agent_runtime_a2a import build_agent_runtime_a2a_card_url
 from google.agents.cli._output import emit
@@ -100,6 +97,8 @@ def get_sdk_version_from_lock_file() -> tuple[str | None, bool]:
 
 def _is_sdk_version_affected(current_version: str) -> bool:
     """Check if the SDK version is affected by the Gemini Enterprise bug."""
+    from packaging import version
+
     return version.parse(current_version) <= version.parse(
         SDK_MIN_VERSION_FOR_GEMINI_ENTERPRISE
     )
@@ -331,6 +330,8 @@ def fetch_agent_card_from_url(url: str) -> dict | None:
     Uses an access token for googleapis.com URLs and an audience-scoped
     ID token for all other URLs.
     """
+    import requests
+
     try:
         headers = {}
 
@@ -599,6 +600,8 @@ def list_gemini_enterprise_apps(
     Returns:
         List of engine dictionaries with 'name' and 'displayName' keys, or None on error
     """
+    import requests
+
     try:
         access_token = get_access_token()
         base_endpoint = get_discovery_engine_endpoint(location)
@@ -870,6 +873,8 @@ def _find_existing_agent(
     match: Callable[[dict], bool],
 ) -> dict | None:
     """Return the first registered agent satisfying ``match``, scanning all pages."""
+    import requests
+
     params = {"pageSize": 100}
     while True:
         resp = requests.get(list_url, headers=headers, params=params, timeout=30)
@@ -899,6 +904,8 @@ def _upsert_agent(
     Returns:
         Tuple of (API response dict, action) where action is "created" or "updated".
     """
+    import requests
+
     existing_agent = _find_existing_agent(list_url=list_url, headers=headers, match=match)
 
     try:
@@ -1163,6 +1170,8 @@ def _list_gemini_enterprise_apps(project_id: str | None, interactive: bool) -> N
             f"\nNo Gemini Enterprise apps found in project {resolved_project_id}."
         )
         return
+
+    from rich.table import Table
 
     table = Table(title=f"Gemini Enterprise Apps — {resolved_project_id}")
     table.add_column("Display Name", style="bold")

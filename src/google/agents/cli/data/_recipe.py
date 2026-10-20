@@ -18,7 +18,7 @@
 # provisioning and data ingestion now live in each sample's own Makefile, so these
 # CLI commands are tombstoned with an actionable pointer to the samples.
 RAG_RECIPE_MESSAGE = (
-    "RAG is now a clone-and-study recipe — this command has been removed.\n\n"
+    "✕ RAG is now a clone-and-study recipe — this command has been removed.\n\n"
     "Datastore provisioning and data ingestion live in each sample's own Makefile\n"
     "(e.g. `make setup-infra`, `make data-ingestion`). Start from one of:\n"
     "  - rag-vector-search  Vertex AI Vector Search + KFP ingestion pipeline\n"

@@ -16,12 +16,9 @@
 
 from __future__ import annotations
 
-import logging
 import os
 import time
 from pathlib import Path
-
-import click
 
 # Pin the skills npm package to avoid executing an unverified version.
 SKILLS_NPX_PACKAGE = "skills@1.4.8"
@@ -36,6 +33,8 @@ def _parse_skill_version(skill_md: Path) -> str | None:
     Returns the version string, or ``None`` on any failure.
     Warns to stderr when the file exists but cannot be parsed.
     """
+    import logging
+
     try:
         content = skill_md.read_text(encoding="utf-8")
     except OSError:
@@ -51,6 +50,7 @@ def _parse_skill_version(skill_md: Path) -> str | None:
     try:
         # Lazy import yaml to speed up CLI startup time
         import yaml
+
         frontmatter = yaml.safe_load(parts[1])
     except yaml.YAMLError:
         logging.warning(f"Malformed skill file (invalid YAML): {skill_md}")
@@ -71,6 +71,7 @@ def _find_installed_skills() -> dict[str, str]:
     when skills are installed to a non-default location.
     """
     import json
+    import logging
 
     result: dict[str, str] = {}
 
@@ -82,6 +83,7 @@ def _find_installed_skills() -> dict[str, str]:
 
     try:
         from google.agents.cli._project import find_project_root
+
         project_root = find_project_root()
         if project_root:
             skills_dirs.append(project_root / "skills")
@@ -164,6 +166,7 @@ def get_installed_skills() -> list[dict] | None:
     Returns None if the query fails.
     """
     import json
+    import logging
 
     try:
         from google.agents.cli._runner import run_resolved
@@ -235,6 +238,8 @@ def check_skills_version() -> None:
     installed = _find_installed_skills()
     if not installed:
         return
+
+    import click
 
     from google.agents.cli import __version__
 

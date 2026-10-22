@@ -73,12 +73,27 @@ def test_redact_cmd_case_insensitive_and_extended():
     args_2 = ["python", "-m", "main", "--Api_Key=AIzaSyKey123"]
     assert redact_cmd(args_2) == "python -m main '--Api_Key=[REDACTED]'"
 
-    # Extended options (e.g. password, token, secret)
+    # Extended options (e.g. password, token, secret, bearer-token, authorization, auth, pat, credential)
     args_3 = ["deploy", "--password", "supersecretpwd"]
     assert redact_cmd(args_3) == "deploy --password '[REDACTED]'"
 
     args_4 = ["deploy", "--access-token=my-access-token-123"]
     assert redact_cmd(args_4) == "deploy '--access-token=[REDACTED]'"
+
+    args_5 = ["curl", "-H", "Authorization: Bearer secret_123"]
+    assert redact_cmd(args_5) == "curl -H 'Authorization: [REDACTED]'"
+
+    args_6 = ["curl", "-H", "X-Api-Key: secret_key_abc"]
+    assert redact_cmd(args_6) == "curl -H 'X-Api-Key: [REDACTED]'"
+
+    args_7 = ["deploy", "Bearer", "secret_token_val"]
+    assert redact_cmd(args_7) == "deploy Bearer '[REDACTED]'"
+
+    args_8 = ["deploy", "Bearer secret_token_val"]
+    assert redact_cmd(args_8) == "deploy 'Bearer [REDACTED]'"
+
+    args_9 = ["deploy", "--bearer-token", "mytoken", "--auth", "myauth", "--pat", "mypat"]
+    assert redact_cmd(args_9) == "deploy --bearer-token '[REDACTED]' --auth '[REDACTED]' --pat '[REDACTED]'"
 
     # Case-insensitive env vars (e.g. lowercase)
     args_5 = ["env", "gemini_api_key=AIzaSyKey123", "python"]

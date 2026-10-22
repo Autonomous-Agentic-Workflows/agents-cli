@@ -91,3 +91,47 @@ def test_run_auth_step_menu_formatting():
                 call.args[0] if call.args else "" for call in mock_echo.call_args_list
             ]
             assert "  Choose an authentication method:" in printed_texts
+
+
+def test_setup_gemini_api_key_pause_styled():
+    """Verify that _setup_gemini_api_key styles the pause prompt using bold cyan."""
+    import os
+    import click
+    from google.agents.cli.auth import _setup_gemini_api_key
+
+    with patch.dict(os.environ, {}, clear=True):
+        with (
+            patch("webbrowser.open"),
+            patch("click.pause") as mock_pause,
+            patch("click.echo"),
+            patch("click.secho"),
+            patch("google.agents.cli.auth._api_key_instructions"),
+        ):
+            _setup_gemini_api_key()
+            mock_pause.assert_called_once()
+            expected_msg = click.style(
+                "  Press Enter to open the browser...", fg="cyan", bold=True
+            )
+            assert mock_pause.call_args[0][0] == expected_msg
+
+
+def test_setup_express_mode_pause_styled():
+    """Verify that _setup_express_mode styles the pause prompt using bold cyan."""
+    import os
+    import click
+    from google.agents.cli.auth import _setup_express_mode
+
+    with patch.dict(os.environ, {}, clear=True):
+        with (
+            patch("webbrowser.open"),
+            patch("click.pause") as mock_pause,
+            patch("click.echo"),
+            patch("click.secho"),
+            patch("google.agents.cli.auth._api_key_instructions"),
+        ):
+            _setup_express_mode()
+            mock_pause.assert_called_once()
+            expected_msg = click.style(
+                "  Press Enter to open the browser...", fg="cyan", bold=True
+            )
+            assert mock_pause.call_args[0][0] == expected_msg

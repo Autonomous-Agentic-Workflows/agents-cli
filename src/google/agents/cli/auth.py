@@ -243,7 +243,7 @@ def _setup_gemini_api_key():
     click.secho(f"  {url}", fg="cyan")
     click.echo()
 
-    click.pause("  Press Enter to open the browser...")
+    click.pause(click.style("  Press Enter to open the browser...", fg="cyan", bold=True))
     webbrowser.open(url)
 
     click.echo()
@@ -283,7 +283,7 @@ def _setup_express_mode():
     click.secho(f"  {url}", fg="cyan")
     click.echo()
 
-    click.pause("  Press Enter to open the browser...")
+    click.pause(click.style("  Press Enter to open the browser...", fg="cyan", bold=True))
     webbrowser.open(url)
 
     click.echo()

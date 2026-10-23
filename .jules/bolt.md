@@ -11,3 +11,7 @@
 ## 2026-03-07 - Cross-Platform Paths in Detached Inline Subprocesses
 **Learning:** When spawning detached Python background processes running inline python code via `python -c "..."` on Windows systems, unescaped backslashes in raw filesystem paths (e.g. from `Path.home()`) cause python compilation `SyntaxError`s when interpolated into strings.
 **Action:** Always convert local filesystem `Path` objects to POSIX-style paths using `.as_posix()` before interpolating them into inline subprocess commands.
+
+## 2026-03-08 - Deferring Heavy GCP/Vertex AI SDK Imports in Command Modules
+**Learning:** Top-level imports of heavy GCP SDKs (such as `vertexai`, `google.cloud.resourcemanager_v3`, `requests`, and `backoff`) in CLI command modules cause multi-second latency (~8.7s) on initial module load. Deferring heavy SDK imports into function bodies and using `TYPE_CHECKING` for type annotations drops module import time down to ~130ms.
+**Action:** Always defer top-level imports of heavy GCP/Vertex AI SDKs inside the function bodies where they are actually executed.

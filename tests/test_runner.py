@@ -86,3 +86,22 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_new_sensitive_options_and_env():
+    # Additional flags
+    args_1 = ["curl", "--authorization", "Bearer token123"]
+    assert redact_cmd(args_1) == "curl --authorization '[REDACTED]'"
+
+    args_2 = ["curl", "--bearer-token=secret_bearer_token"]
+    assert redact_cmd(args_2) == "curl '--bearer-token=[REDACTED]'"
+
+    args_3 = ["tool", "--private-key", "my-key-file.pem"]
+    assert redact_cmd(args_3) == "tool --private-key '[REDACTED]'"
+
+    # Additional env vars
+    args_4 = ["env", "BEARER_TOKEN=bearer_123", "python"]
+    assert redact_cmd(args_4) == "env 'BEARER_TOKEN=[REDACTED]' python"
+
+    args_5 = ["env", "PRIVATE_KEY=pk_123", "python"]
+    assert redact_cmd(args_5) == "env 'PRIVATE_KEY=[REDACTED]' python"

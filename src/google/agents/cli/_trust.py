@@ -50,7 +50,7 @@ def require_confirmation(message: str):
         def wrapper(*args, interactive=False, yes=False, **kwargs):
             if interactive and not yes:
                 click.echo()
-                if not click.confirm(f"  {message}", default=False):
+                if not click.confirm(f"  {click.style(message, bold=True)}", default=False):
                     click.echo()
                     click.secho("  Aborted.", fg="yellow")
                     return

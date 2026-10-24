@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import time
 from pathlib import Path
 
@@ -28,6 +29,12 @@ SKILLS_NPX_PACKAGE = "skills@1.4.8"
 
 _SKILLS_CHECK_INTERVAL = 12 * 60 * 60  # 12 hours in seconds
 _SKILLS_CHECK_STAMP = Path.home() / ".agents" / ".acli_skills_check"
+
+# Fast O(1) regex match for version in YAML metadata section to avoid loading PyYAML
+_SKILL_VERSION_RE = re.compile(
+    r"^\s*metadata\s*:\s*\n(?:[ \t]+[^\n]*\n)*?[ \t]+version\s*:\s*[\"']?([^\s\"'#]+)[\"']?",
+    re.MULTILINE,
+)
 
 
 def _parse_skill_version(skill_md: Path) -> str | None:
@@ -48,8 +55,14 @@ def _parse_skill_version(skill_md: Path) -> str | None:
     if len(parts) < 3:
         logging.warning(f"Malformed skill file (incomplete frontmatter): {skill_md}")
         return None
+
+    # Fast path: extract version via regex without importing heavy PyYAML library
+    m = _SKILL_VERSION_RE.search(parts[1])
+    if m:
+        return m.group(1).strip()
+
     try:
-        # Lazy import yaml to speed up CLI startup time
+        # Fallback: import yaml if regex extraction misses non-standard frontmatter
         import yaml
         frontmatter = yaml.safe_load(parts[1])
     except yaml.YAMLError:

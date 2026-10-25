@@ -39,6 +39,13 @@ _SENSITIVE_OPTIONS = {
     "--access_token",
     "--auth-token",
     "--auth_token",
+    "--bearer-token",
+    "--bearer_token",
+    "--authorization",
+    "--auth",
+    "--pat",
+    "--credential",
+    "--credentials",
     "--token",
     "--password",
     "--secret",
@@ -72,6 +79,8 @@ def redact_cmd(args: list[str]) -> str:
     redacted_cmd_list = list(args)
 
     for i, raw_arg in enumerate(args):
+        if redacted_cmd_list[i] == "[REDACTED]":
+            continue
         arg = str(raw_arg)
         arg_lower = arg.lower()
         if arg_lower in _SENSITIVE_OPTIONS and i + 1 < len(args):
@@ -88,6 +97,19 @@ def redact_cmd(args: list[str]) -> str:
                     redacted_cmd_list[i] = "[REDACTED]"
             else:
                 redacted_cmd_list[i] = "[REDACTED]"
+        elif ":" in arg:
+            header_name, sep, header_val = arg.partition(":")
+            header_name_lower = header_name.strip().lower()
+            if header_name_lower in (
+                "authorization",
+                "x-api-key",
+                "api-key",
+                "x-goog-api-key",
+                "proxy-authorization",
+            ):
+                redacted_cmd_list[i] = f"{header_name}: [REDACTED]"
+        elif arg.lower().startswith("bearer "):
+            redacted_cmd_list[i] = "Bearer [REDACTED]"
 
     # Make sure we convert everything to string for shlex.join
     return shlex.join(str(a) for a in redacted_cmd_list)

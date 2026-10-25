@@ -30,7 +30,7 @@ from google.agents.cli._project import (
     ProjectConfig,
     find_project_config,
 )
-from google.agents.cli._runner import run_resolved
+from google.agents.cli._runner import redact_cmd, run_resolved
 from google.agents.cli._tools import ToolNotFoundError, require_tool
 
 from ..utils.backup import create_project_backup
@@ -250,7 +250,7 @@ def _execute_with_saved_config(
         # the CLI is installed, regardless of how it was originally launched.
         cmd = [sys.executable, "-m", "google.agents.cli.main", *args]
 
-    logging.debug(f"Executing command: {shlex.join(cmd)}")
+    logging.debug(f"Executing command: {redact_cmd(cmd)}")
 
     # Set env var to prevent infinite loop in nested execution
     env = os.environ.copy()

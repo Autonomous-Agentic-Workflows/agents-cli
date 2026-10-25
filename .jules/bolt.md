@@ -11,3 +11,7 @@
 ## 2026-03-07 - Cross-Platform Paths in Detached Inline Subprocesses
 **Learning:** When spawning detached Python background processes running inline python code via `python -c "..."` on Windows systems, unescaped backslashes in raw filesystem paths (e.g. from `Path.home()`) cause python compilation `SyntaxError`s when interpolated into strings.
 **Action:** Always convert local filesystem `Path` objects to POSIX-style paths using `.as_posix()` before interpolating them into inline subprocess commands.
+
+## 2026-03-08 - Lazy Package Version Resolution with PEP 562 and Click
+**Learning:** Importing `importlib.metadata` at package top-level to resolve `__version__` adds ~75–80ms import overhead on every CLI invocation because `importlib.metadata` eagerly loads `email.message`, `_adapters`, `_meta`, `_collections`, etc. Using PEP 562 module `__getattr__` in `__init__.py` and `@click.version_option(package_name="...")` in Click defers importing `importlib.metadata` until `--version` or version check is explicitly requested.
+**Action:** Combine module-level `__getattr__` with Click's `package_name` parameter to lazily resolve package version information without incurring startup import penalties.

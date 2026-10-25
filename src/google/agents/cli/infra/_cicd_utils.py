@@ -465,9 +465,9 @@ def handle_github_authentication(interactive: bool = True) -> None:
 
     click.secho("\n🔑 GitHub Authentication Required", bold=True, fg="yellow")
     click.echo("You need to authenticate with GitHub CLI to continue.")
-    click.echo("Choose an authentication method:")
-    click.echo("1. Login with browser")
-    click.echo("2. Login with token")
+    click.secho("Choose an authentication method:", bold=True)
+    click.secho("  1. Login with browser", fg="cyan", bold=True)
+    click.secho("  2. Login with token", fg="cyan", bold=True)
 
     choice = click.prompt(
         "Select authentication method", type=click.Choice(["1", "2"]), default="1"

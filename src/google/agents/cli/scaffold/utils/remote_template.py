@@ -198,10 +198,10 @@ def fetch_remote_template(
             str(repo_path),
         ]
 
-        from google.agents.cli._runner import run_resolved
+        from google.agents.cli._runner import redact_cmd, run_resolved
 
         logging.debug(
-            f"Attempting to clone remote template with Git: {shlex.join(clone_cmd)}"
+            f"Attempting to clone remote template with Git: {redact_cmd(clone_cmd)}"
         )
         # GIT_TERMINAL_PROMPT=0 prevents git from prompting for credentials
         result = run_resolved(

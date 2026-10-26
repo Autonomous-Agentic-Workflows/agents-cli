@@ -73,16 +73,25 @@ def test_redact_cmd_case_insensitive_and_extended():
     args_2 = ["python", "-m", "main", "--Api_Key=AIzaSyKey123"]
     assert redact_cmd(args_2) == "python -m main '--Api_Key=[REDACTED]'"
 
-    # Extended options (e.g. password, token, secret)
+    # Extended options (e.g. password, token, secret, bearer-token, pat, credential)
     args_3 = ["deploy", "--password", "supersecretpwd"]
     assert redact_cmd(args_3) == "deploy --password '[REDACTED]'"
 
     args_4 = ["deploy", "--access-token=my-access-token-123"]
     assert redact_cmd(args_4) == "deploy '--access-token=[REDACTED]'"
 
-    # Case-insensitive env vars (e.g. lowercase)
-    args_5 = ["env", "gemini_api_key=AIzaSyKey123", "python"]
-    assert redact_cmd(args_5) == "env 'gemini_api_key=[REDACTED]' python"
+    args_5 = ["deploy", "--bearer-token", "bearer_token_123"]
+    assert redact_cmd(args_5) == "deploy --bearer-token '[REDACTED]'"
 
-    args_6 = ["env", "db_password=mypassword", "python"]
-    assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+    args_6 = ["deploy", "--pat=ghp_secret_pat_123"]
+    assert redact_cmd(args_6) == "deploy '--pat=[REDACTED]'"
+
+    args_7 = ["deploy", "--credential", "my-cred-secret"]
+    assert redact_cmd(args_7) == "deploy --credential '[REDACTED]'"
+
+    # Case-insensitive env vars (e.g. lowercase)
+    args_8 = ["env", "gemini_api_key=AIzaSyKey123", "python"]
+    assert redact_cmd(args_8) == "env 'gemini_api_key=[REDACTED]' python"
+
+    args_9 = ["env", "db_password=mypassword", "python"]
+    assert redact_cmd(args_9) == "env 'db_password=[REDACTED]' python"

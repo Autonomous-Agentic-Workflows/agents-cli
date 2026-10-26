@@ -11,3 +11,7 @@
 ## 2026-03-07 - Cross-Platform Paths in Detached Inline Subprocesses
 **Learning:** When spawning detached Python background processes running inline python code via `python -c "..."` on Windows systems, unescaped backslashes in raw filesystem paths (e.g. from `Path.home()`) cause python compilation `SyntaxError`s when interpolated into strings.
 **Action:** Always convert local filesystem `Path` objects to POSIX-style paths using `.as_posix()` before interpolating them into inline subprocess commands.
+
+## 2026-03-08 - Deferring importlib.metadata via PEP 562 and Click package_name
+**Learning:** Importing `importlib.metadata` on CLI startup eager loads distribution metadata scanning, adding ~35-40ms to every CLI invocation. Using PEP 562 `__getattr__` in `__init__.py` for `__version__` and passing `package_name="google-agents-cli"` to `@click.version_option` defers `importlib.metadata` resolution until `--version` is actually invoked or `__version__` is accessed on cold paths.
+**Action:** Always use PEP 562 `__getattr__` for package `__version__` attributes and Click's `package_name` parameter to avoid loading package distribution metadata during normal CLI startup.

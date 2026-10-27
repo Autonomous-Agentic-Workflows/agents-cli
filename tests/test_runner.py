@@ -86,3 +86,20 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_service_account_and_credentials():
+    args_1 = ["gcloud", "--service-account-key", "secret_sa_key.json"]
+    assert redact_cmd(args_1) == "gcloud --service-account-key '[REDACTED]'"
+
+    args_2 = ["gcloud", "--credentials=my_creds.json"]
+    assert redact_cmd(args_2) == "gcloud '--credentials=[REDACTED]'"
+
+    args_3 = ["env", "SERVICE_ACCOUNT_KEY=sa_secret_json", "python"]
+    assert redact_cmd(args_3) == "env 'SERVICE_ACCOUNT_KEY=[REDACTED]' python"
+
+    args_4 = ["deploy", "--private-key", "-----BEGIN PRIVATE KEY-----..."]
+    assert redact_cmd(args_4) == "deploy --private-key '[REDACTED]'"
+
+    args_5 = ["env", "PRIVATE_KEY=-----BEGIN...", "python"]
+    assert redact_cmd(args_5) == "env 'PRIVATE_KEY=[REDACTED]' python"

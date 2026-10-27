@@ -44,6 +44,11 @@ _SENSITIVE_OPTIONS = {
     "--secret",
     "--client-secret",
     "--client_secret",
+    "--service-account-key",
+    "--service_account_key",
+    "--credentials",
+    "--private-key",
+    "--private_key",
 }
 _SENSITIVE_PREFIXES = tuple(opt + "=" for opt in sorted(_SENSITIVE_OPTIONS))
 
@@ -61,6 +66,8 @@ _SENSITIVE_ENV_VARS = (
     "DB_PASSWORD",
     "DB_PASS",
     "PASSWORD",
+    "SERVICE_ACCOUNT_KEY",
+    "PRIVATE_KEY",
 )
 
 

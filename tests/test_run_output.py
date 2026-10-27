@@ -16,10 +16,11 @@
 
 from unittest.mock import patch
 
-from a2a.types import FilePart, FileWithUri, Part
+from a2a.types import DataPart, FilePart, FileWithUri, Part
 
 from google.agents.cli.run.cmd_run import (
     _print_a2a_part,
+    _print_artifacts,
     _print_author_tag,
     _print_sse_part,
 )
@@ -77,3 +78,23 @@ def test_print_a2a_part_file_color():
         mock_secho.assert_called_once_with(
             "\n[file: https://example.com/file.pdf]", fg="cyan", nl=False
         )
+
+
+def test_print_a2a_part_data_dimmed():
+    artifacts = []
+    part = Part(root=DataPart(data={"status": "success", "count": 42}))
+
+    with patch("click.secho") as mock_secho:
+        _print_a2a_part(part, artifacts)
+        mock_secho.assert_called_once_with(
+            '\n{\n  "status": "success",\n  "count": 42\n}', dim=True, nl=False
+        )
+
+
+def test_print_artifacts_styling():
+    paths = [".google-agents-cli/artifacts/test.png"]
+
+    with patch("click.secho") as mock_secho:
+        _print_artifacts(paths)
+        mock_secho.assert_any_call("Artifacts:", fg="cyan", bold=True)
+        mock_secho.assert_any_call("  .google-agents-cli/artifacts/test.png", dim=True)

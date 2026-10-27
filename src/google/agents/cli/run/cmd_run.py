@@ -504,7 +504,7 @@ def _print_artifacts(paths: list[str]) -> None:
     if not paths:
         return
     click.echo()
-    click.secho("Artifacts:", dim=True)
+    click.secho("Artifacts:", fg="cyan", bold=True)
     for path in paths:
         click.secho(f"  {path}", dim=True)
 
@@ -856,7 +856,7 @@ def _print_a2a_part(part: Part, artifacts: list[str]) -> None:
             if path is not None:
                 artifacts.append(path)
     elif hasattr(root, "data") and root.data is not None:
-        click.echo(f"\n{json.dumps(root.data, indent=2)}", nl=False)
+        click.secho(f"\n{json.dumps(root.data, indent=2)}", dim=True, nl=False)
 
 
 def _print_sse_part(part: dict, artifacts: list[str]) -> None:

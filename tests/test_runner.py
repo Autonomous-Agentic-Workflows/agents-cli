@@ -86,3 +86,29 @@ def test_redact_cmd_case_insensitive_and_extended():
 
     args_6 = ["env", "db_password=mypassword", "python"]
     assert redact_cmd(args_6) == "env 'db_password=[REDACTED]' python"
+
+
+def test_redact_cmd_new_sensitive_patterns():
+    # Credentials, service account keys, private keys, auth flags
+    args_1 = ["deploy", "--service-account-key", "secret-sa-json-key"]
+    assert redact_cmd(args_1) == "deploy --service-account-key '[REDACTED]'"
+
+    args_2 = ["deploy", "--credentials=secret-creds"]
+    assert redact_cmd(args_2) == "deploy '--credentials=[REDACTED]'"
+
+    args_3 = ["deploy", "--private-key", "secret-key-material"]
+    assert redact_cmd(args_3) == "deploy --private-key '[REDACTED]'"
+
+    # Authorization header and Bearer token
+    args_4 = ["curl", "-H", "Authorization: Bearer my-secret-token"]
+    assert redact_cmd(args_4) == "curl -H 'Authorization: [REDACTED]'"
+
+    args_5 = ["curl", "Bearer", "secret-bearer-token"]
+    assert redact_cmd(args_5) == "curl Bearer '[REDACTED]'"
+
+    # Additional sensitive env vars
+    args_6 = ["env", "SERVICE_ACCOUNT_KEY=sa_key_123", "python"]
+    assert redact_cmd(args_6) == "env 'SERVICE_ACCOUNT_KEY=[REDACTED]' python"
+
+    args_7 = ["env", "PRIVATE_KEY=pk_123", "python"]
+    assert redact_cmd(args_7) == "env 'PRIVATE_KEY=[REDACTED]' python"

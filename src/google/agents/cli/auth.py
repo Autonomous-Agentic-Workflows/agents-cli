@@ -333,7 +333,11 @@ def run_auth_step(show_header=True):
     click.secho("  3. Skip", dim=True)
     click.echo()
 
-    choice = click.prompt("  Enter your choice", type=click.IntRange(1, 3), default=1)
+    choice = click.prompt(
+        click.style("  Enter your choice", fg="cyan", bold=True),
+        type=click.IntRange(1, 3),
+        default=1,
+    )
 
     if choice == 3:
         click.echo()

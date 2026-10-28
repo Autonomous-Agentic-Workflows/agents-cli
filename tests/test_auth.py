@@ -78,11 +78,12 @@ def test_login_status_not_authenticated():
 
 def test_run_auth_step_menu_formatting():
     """Verify that run_auth_step renders the formatted authentication menu with bullets."""
+    import click
     from google.agents.cli.auth import run_auth_step
 
     with (
         patch("google.agents.cli.auth.is_authenticated", return_value=(False, None)),
-        patch("click.prompt", return_value=3),
+        patch("click.prompt", return_value=3) as mock_prompt,
     ):
         with patch("click.echo") as mock_echo:
             assert run_auth_step(show_header=True) is True
@@ -91,3 +92,9 @@ def test_run_auth_step_menu_formatting():
                 call.args[0] if call.args else "" for call in mock_echo.call_args_list
             ]
             assert "  Choose an authentication method:" in printed_texts
+            # Confirm click.prompt is styled with bold cyan
+            mock_prompt.assert_called_once()
+            args, kwargs = mock_prompt.call_args
+            assert args[0] == click.style("  Enter your choice", fg="cyan", bold=True)
+            assert kwargs["default"] == 1
+            assert kwargs["type"].min == 1 and kwargs["type"].max == 3
